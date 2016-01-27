@@ -26,12 +26,14 @@
 		Libvirt domain definition, which the orchestrator uses as a template for the
 		creation and execution of the network function.
 	-->
-	<network-function name="example" num-ports="4" description="Example VNF with several implementations">
+	<network-function name="example" num-ports="2" summary="Example VNF with several implementations">
 		<!-- Several implementations are available for this network function -->
-		<implementation type="docker" uri="example"/>
-		<implementation type="dpdk" uri="https://nf_repository.com/example" cores="1" location="remote"/>
-		<implementation type="dpdk" uri="../NFs/dpdk/example/build/example" cores="1" location="local"/>
-		<implementation type="kvm" uri="../NFs/kvm/example/example_vnf_template.xml">
+
+		<native uri="../NFs/native/example/nativeNF_example.tar.gz" dependencies="iptables ebtables" location="local"/>
+		<docker uri="example"/>
+		<dpdk uri="https://nf_repository.com/example" cores="1" location="remote"/>
+		<dpdk uri="../NFs/dpdk/example/build/example" cores="1" location="local"/>
+		<kvm uri="../NFs/kvm/example/example_vnf_template.xml">
 			<!--
 				KVM requires to specify, for each port of the VM, it's type.
 				Note that some types are not available with all the possibile vSwitches.
@@ -42,33 +44,46 @@
 			-->
 			<port port-id="1" port-type="vhost"/>
 			<port port-id="2" port-type="vhost"/>
-		</implementation>
+		</kvm>
+		
 	</network-function>
 	
-	<network-function name="firewall" num-ports="2" description="iptables based firewall">
+
+	<network-function name="fw"  num-ports="2" summary="iptables based firewall">
 		<!-- Only a docker implementation is available for this network function -->
-		<implementation type="docker" uri="firewall"/>
+		<docker uri="firewall"/>
 	</network-function>
 	
 	<!-- un orchestrtator adds veth interfaces for docker, be aware that max length for vnf name is 7 chars in this case  -->
-	<network-function name="ovs1" num-ports="4" description="openvswitch in userspace ip 10.0.10.1/24">
+	<network-function name="ovs1" num-ports="4" summary="openvswitch in userspace ip 10.0.10.1/24">
 			<!-- Only a docker implementation is available for this network function -->
-			<implementation type="docker" uri="ovs1"/>
+			<docker uri="ovs1"/>
 	</network-function>
 	
-	<network-function name="ovs2" num-ports="4" description="openvswitch in userspace ip 10.0.10.2/24">
+	<network-function name="ovs2" num-ports="4" summary="openvswitch in userspace ip 10.0.10.2/24">
 			<!-- Only a docker implementation is available for this network function -->
-			<implementation type="docker" uri="ovs2"/>
+			<docker uri="ovs2"/>
 	</network-function>
 	
-	<network-function name="ctrl1" num-ports="1" description="control app for elastic router ip 10.0.10.100/24">
+	<network-function name="ovs3" num-ports="4" summary="openvswitch in userspace ip 10.0.10.3/24">
 			<!-- Only a docker implementation is available for this network function -->
-			<implementation type="docker" uri="ctrl1"/>
+			<docker uri="ovs3"/>
+	</network-function>
+	
+	<network-function name="ovs4" num-ports="4" summary="openvswitch in userspace ip 10.0.10.4/24">
+			<!-- Only a docker implementation is available for this network function -->
+			<docker uri="ovs4"/>
 	</network-function>
 
-	<network-function name="ubuntu1" num-ports="4" description="basic ubuntu docker">
+	<network-function name="ovs5" num-ports="4" summary="openvswitch in userspace ip 10.0.10.5/24">
 			<!-- Only a docker implementation is available for this network function -->
-			<implementation type="docker" uri="ubuntu1"/>
+			<docker uri="ovs5"/>
 	</network-function>
+	
+	<network-function name="ctrl1" num-ports="1" summary="control app for elastic router ip 10.0.10.100/24">
+			<!-- Only a docker implementation is available for this network function -->
+			<docker uri="ctrl1"/>
+	</network-function>
+
 
 </network-functions>
