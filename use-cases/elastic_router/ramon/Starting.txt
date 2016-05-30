@@ -32,8 +32,10 @@ The starting sequence for the aggregator and the RAMONs is as follows:
     The fourth argument is the port used to configure RAMON.(Default
         is 54736). If the configuration is to be done over the DD
         bus, a mechanism for relaying the configuration to the RAMON
-        has to be implemented in ratemon_client.py (there is some
-        code there, which Bertrand wrote) that can be expanded.
+        has to be implemented in ratemon_client.py There is some
+        code in the "on_data" method, which Bertrand wrote, that can
+        be expanded. I have changed it a little bit so that it now
+        expects a Json-Rpc message over the DD bus. 
         Otherwise the config message can be sent directly to RAMON
         on the config port.
 
