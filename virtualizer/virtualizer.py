@@ -80,6 +80,7 @@ class DoGetConfig:
 	
 		LOG.debug("%s",infrastructure.xml())
 
+		resp.content_type = "text/xml"
 		resp.body = infrastructure.xml()
 		resp.status = falcon.HTTP_200
 
@@ -137,13 +138,12 @@ class DoEditConfig:
 			# The required modifications have been implemented in the universal node, then we can update the
 			# configuration saved in the proper files
 			#
-			
-			addToGraphFile(rulesToBeAdded,vnfsToBeAdded, endpoints) #Update the json representation of the deployed graph, by inserting the new VNFs/rules
-				
-			removeFromGraphFile(vnfsToBeRemoved,rulesToBeRemoved) #Update the json representation of the deployed graph, by inserting the new VNFs/rules
+
+			updateGraphFile(rulesToBeAdded, vnfsToBeAdded, endpoints, rulesToBeRemoved, vnfsToBeRemoved) #Update the json representation of the deployed graph
 			
 			un_config = updateUniversalNodeConfig(content) #Updates the file containing the current configuration of the universal node, by editing the #<flowtable> and the <NF_instances> and returning the xml
 			
+			resp.content_type = "text/xml"
 			resp.body = un_config
 			resp.status = falcon.HTTP_200
 
@@ -733,12 +733,12 @@ def equivalentAction(tag):
 	'''
 	return constants.equivalent_actions[tag]
 
-def addToGraphFile(newRules,newVNFs, newEndpoints):
+	
+def updateGraphFile (newRules,newVNFs, newEndpoints, rulesToBeRemoved, vnfsToBeRemoved):
 	'''
 	Read the graph currently deployed. It is stored in a tmp file, in a json format.
-	Then, adds to it the new VNFs, the new flowrules and the new endpoints to be instantiated.
+ 	Then, adds to it the new VNFs, the new flowrules and the new endpoints to be instantiated and removes parts to be deleted.
 	'''
-	
 	LOG.debug("Updating the json representation of the whole graph deployed")
 
 	try:
@@ -777,49 +777,22 @@ def addToGraphFile(newRules,newVNFs, newEndpoints):
 			nffg.addEndPoint(endp)
 	if unify_monitoring != "":
 		nffg.unify_monitoring = unify_monitoring
-	
-	LOG.debug("Updated graph:");	
-	LOG.debug("%s",nffg.getJSON());
-	
-	try:
-		tmpFile = open(constants.GRAPH_FILE, "w")
-		tmpFile.write(json.dumps(nffg.getDict(), indent=4, separators=(',', ': ')))
-		tmpFile.close()
-	except IOError as e:
-		print "I/O error({0}): {1}".format(e.errno, e.strerror)
-		raise ServerError("I/O error")
-			
-def removeFromGraphFile(vnfsToBeRemoved,rulesToBeRemoved):
-	'''
-	Read the graph currently deployed. It is stored in a tmp file, in a json format.
-	Then, removes from it the VNFs and the flowrules to be removed
-	'''
-	
-	LOG.debug("Removing VNFs and flowrules from the graph containing the json representation of the graph")
-	
-	try:
-		LOG.debug("Reading file: %s",constants.GRAPH_FILE)
-		tmpFile = open(constants.GRAPH_FILE,"r")
-		json_file = tmpFile.read()
-		tmpFile.close()
-	except IOError as e:
-		print "I/O error({0}): {1}".format(e.errno, e.strerror)
-		raise ServerError("I/O error")
-	
-	nffg_dict = json.loads(json_file)
-	nffg = NF_FG()
-	nffg.parseDict(nffg_dict)
+
+	# Parts to be deleted
 
 	for vnf in nffg.vnfs[:]:
 		if vnf.name in vnfsToBeRemoved:
+			LOG.debug("VNF: %s removed!",vnf.name)
 			nffg.vnfs.remove(vnf)
 	
 	for rule in nffg.flow_rules[:]:
 		if rule.id in rulesToBeRemoved:
+			LOG.debug("Flowrule: %s removed!",rule.id)
 			nffg.flow_rules.remove(rule)
 	
 	for endpoint in nffg.end_points[:]:
 		if not nffg.getFlowRulesSendingTrafficToEndPoint(endpoint.id) and not nffg.getFlowRulesSendingTrafficFromEndPoint(endpoint.id):
+			LOG.debug("Endpoint: %s removed!",endpoint.id)
 			nffg.end_points.remove(endpoint)
 	
 	LOG.debug("Updated graph:");	
