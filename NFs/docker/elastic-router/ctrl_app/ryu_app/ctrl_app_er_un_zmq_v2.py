@@ -100,6 +100,7 @@ class ElasticRouter(app_manager.RyuApp):
     def parse_nffg(self, nffg):
         # check nffg and parse the ovs instances deployed
         nffg_DPs = er_nffg.process_nffg(nffg)
+        self.logger.info('parsed DPs: {0}'.format(nffg_DPs))
         for DP_name in nffg_DPs:
             # if DP already exists in the ctrl app, leave it (otherwise port numbers and registered setting will be lost)
             if DP_name in self.DP_instances:

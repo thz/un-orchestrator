@@ -46,7 +46,7 @@ def process_nffg(nffg_json):
 
                 logging.debug("found ovs port: %s with ovs id: %s", portName, ovsId)
 
-    # first make all the ovs instances with all th ports,
+    # first make all the ovs instances with all the ports,
     # then fill the linked ports
     # this function is only used to parse the first nffg, external ports only
     for ovs_name in ovs_instances:

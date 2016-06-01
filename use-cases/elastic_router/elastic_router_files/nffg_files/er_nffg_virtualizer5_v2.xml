@@ -164,6 +164,10 @@
 						<value>http://localhost:9090/</value>
 					</metadata>
 					-->
+					<metadata>
+						<key>variable:NFFG_FORMAT</key>
+						<value>xml</value>
+					</metadata>
 					
 				</node>
 				<node operation="create">
