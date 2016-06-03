@@ -1,5 +1,8 @@
 #!/bin/sh
-/usr/bin/cadvisor -logtostderr &
+if [ -z ${PORT+x} ];
+then cport=8080
+else cport=$PORT
+fi
 if [ -z ${NAME+x} ];
 then cname=cadvproxy
 else cname=$NAME
@@ -8,4 +11,5 @@ if [ -z ${KEY+x} ];
 then ckey=a
 else ckey=$KEY
 fi
-python3 main.py $cname /keys/$ckey;
+/usr/bin/cadvisor -port=$cport -logtostderr &
+python3 main.py $cname /keys/$ckey -p $cport;
