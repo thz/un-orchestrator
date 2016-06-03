@@ -28,7 +28,7 @@ def send_nffg_xml(base_url, xml_nffg):
     req = urllib2.Request(url, xml_nffg)
     response = urllib2.urlopen(req)
     result = response.read()
-    logging.info(result)
+    #logging.info(result)
 
 
 def send_nffg_json(base_url, nffg_json):
