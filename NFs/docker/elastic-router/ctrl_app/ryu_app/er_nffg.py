@@ -25,6 +25,7 @@ def get_nffg_json(base_url):
 
 def send_nffg_xml(base_url, xml_nffg):
     url = base_url + '/edit-config'
+    logging.info('url: {0}'.format(url))
     req = urllib2.Request(url, xml_nffg)
     response = urllib2.urlopen(req)
     result = response.read()

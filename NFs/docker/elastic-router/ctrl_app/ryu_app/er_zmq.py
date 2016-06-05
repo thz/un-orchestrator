@@ -66,9 +66,15 @@ class er_zmq:
                 self.log.info('start scale in')
                 if len(scaling_ports) > 0:
                     self.ER_app.VNFs_to_be_deleted = self.ER_app.scale(scaling_ports,'in')
+                    # wait unit scaling lock is released
+                    self.er_monitor.scaling_lock.acquire()
+                    self.er_monitor.scaling_lock.release()
 
             elif 'scale_out' in msg[2]:
                 scaling_ports = self.er_monitor.start_scale_out_default()
                 self.log.info('start scale out')
                 if len(scaling_ports) > 0:
                     self.ER_app.VNFs_to_be_deleted = self.ER_app.scale(scaling_ports,'out')
+                    # wait unit scaling lock is released
+                    self.er_monitor.scaling_lock.acquire()
+                    self.er_monitor.scaling_lock.release()

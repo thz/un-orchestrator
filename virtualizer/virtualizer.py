@@ -311,7 +311,6 @@ def extractVNFsInstantiated(content):
 				l4_addresses_list = re.findall("('[a-z]*\/\d*')", l4_addresses)
 				s= ","
 				l4_addresses = s.join(l4_addresses_list)
-				LOG.debug("l4 adresses: %s", l4_addresses)
 				# Removing not needed chars
 				for ch in ['{','}',' ',"'"]:
 					if ch in l4_addresses:
