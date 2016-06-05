@@ -301,7 +301,8 @@ def extractVNFsInstantiated(content):
 		for port_id in instance.ports.port:
 			port = instance.ports[port_id]
 			l4_addresses = port.addresses.l4.get_value()
-			if l4_addresses is not None:
+			# only process l4 address for new VNFs to be created
+			if l4_addresses is not None and instance.get_operation() == 'create':
 				if int(port.id.get_value()) != 0:
 					LOG.error("L4 configuration is supported only to the port with id = 0 on VNF of type '%s'", vnfType)
 					raise ClientError("L4 configuration is supported only to the port with id = 0 on VNF of type " + vnfType)
@@ -326,8 +327,14 @@ def extractVNFsInstantiated(content):
 					unify_port_mapping[instance.id.get_value() + ":" + port_id + "/" + l4_address] = (unOrchestratorIP, tcp_port)
 					unify_control.append(uc)
 					tcp_port = tcp_port + 1
+			# just copy the existing l4 addresses
+			elif l4_addresses is not None and instance.get_operation() is None:
+				l4_addresses_list = re.findall("'[a-z]*\/(\d*)'\s*:\s*\('[0-9.]*', (\d*)\)", l4_addresses)
+				for vnf_port, host_port in l4_addresses_list:
+					uc = UnifyControl(vnf_tcp_port=int(int(vnf_port)), host_tcp_port=int(host_port))
+					unify_control.append(uc)
 			else:
-				if int(port.id.get_value()) == 0:
+				if int(port.id.get_value()) == 0 :
 					LOG.error("Port with id = 0 should be present only if it has a L4 configuration on VNF of type '%s'", vnfType)
 					raise ClientError("Port with id = 0 should be present only if it has a L4 configuration on VNF of type " + vnfType)
 				unify_ip = None
