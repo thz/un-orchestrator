@@ -37,7 +37,7 @@ def get_UN_node(nffg):
 
 def process_nffg(nffg_xml):
 
-    nffg_log.debug("Reading dict: {0}".format(nffg_xml))
+    #nffg_log.debug("Reading dict: {0}".format(nffg_xml))
 
     nffg = get_virtualizer_nffg(nffg_xml)
     un = get_UN_node(nffg)
@@ -431,7 +431,7 @@ def add_flowentry(nffg_xml, port_in, port_out, match=None, priority=10):
     new_flowentry.set_operation(operation="create", recursive=False)
     un.flowtable.add(new_flowentry)
 
-    nffg_log.debug('add flow to nffg: id:{2}-priority:{2} - {0} -> {1}'.format(port_in.ifname, port_out.ifname, flowentry_id, priority))
+    nffg_log.debug('add flow to nffg: id:{2}-priority:{3} - {0} -> {1}'.format(port_in.ifname, port_out.ifname, flowentry_id, priority))
 
     return nffg.xml()
 

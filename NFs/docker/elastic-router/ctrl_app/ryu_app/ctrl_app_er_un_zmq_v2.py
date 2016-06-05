@@ -311,6 +311,8 @@ class ElasticRouter(app_manager.RyuApp):
 
     def scale_finish(self):
 
+        self.logger.info('set new flows with higher prioirity')
+
         self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
 
         # fix priorities of new flow entries to SAPs
@@ -319,6 +321,8 @@ class ElasticRouter(app_manager.RyuApp):
         er_nffg.send_nffg(self.REST_Cf_Or, self.nffg)
         # need some time here to install flows, otherwise packet loss
         hub.sleep(5)
+
+        self.logger.info('delete old VNFs')
 
         # delete the old intermediate VNFs
         # first delete external incoming flows for all old DPs (scaled out topo)
@@ -335,14 +339,15 @@ class ElasticRouter(app_manager.RyuApp):
             VNF_id = self.DP_instances[del_VNF].id
             self.nffg = er_nffg.delete_VNF(self.nffg, VNF_id)
 
-        er_nffg.send_nffg(self.REST_Cf_Or, self.nffg)
+        self.nffg = er_nffg.send_nffg(self.REST_Cf_Or, self.nffg)
         # need some time here to delete all flows, otherwise packet loss
-        # hub.sleep(5)
+        #hub.sleep(5)
 
+        self.logger.info('add new flows with prioirity 10')
 
         self.VNFs_to_be_deleted = []
         #self.scaled_nffg = None
-        self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
+        #self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
         self.parse_nffg(self.nffg)
 
         # fix priorities of new flow entries to SAPs
@@ -350,6 +355,11 @@ class ElasticRouter(app_manager.RyuApp):
         file = open('ER_scale_priorities.xml', 'w')
         file.write(new_nffg)
         file.close()
+        new_nffg = er_nffg.send_nffg(self.REST_Cf_Or, new_nffg)
+        # need some time here to install flows, otherwise packet loss
+        hub.sleep(1)
+
+        self.logger.info('delete old flows with prioirity 9-11')
 
         #new_nffg = er_nffg.get_nffg(self.REST_Cf_Or)
         #need some time here to install flows, otherwise packet loss
@@ -361,11 +371,11 @@ class ElasticRouter(app_manager.RyuApp):
         file.write(new_nffg)
         file.close()
 
-        self.logger.info('restore priorities of flow entries to 10')
+        self.logger.info('restored priorities of flow entries to 10')
         # er_nffg.send_nffg(self.REST_Cf_Or ,er_nffg.remove_quotations_from_ports(new_nffg))
-        er_nffg.send_nffg(self.REST_Cf_Or, new_nffg)
+        self.nffg = er_nffg.send_nffg(self.REST_Cf_Or, new_nffg)
 
-        self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
+        #self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
 
         self.logger.info('scaling finished!')
 
