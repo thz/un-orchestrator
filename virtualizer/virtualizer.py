@@ -80,6 +80,7 @@ class DoGetConfig:
 	
 		LOG.debug("%s",infrastructure.xml())
 
+		resp.content_type = "text/xml"
 		resp.body = infrastructure.xml()
 		resp.status = falcon.HTTP_200
 
@@ -137,13 +138,12 @@ class DoEditConfig:
 			# The required modifications have been implemented in the universal node, then we can update the
 			# configuration saved in the proper files
 			#
-			
-			addToGraphFile(rulesToBeAdded,vnfsToBeAdded, endpoints) #Update the json representation of the deployed graph, by inserting the new VNFs/rules
-				
-			removeFromGraphFile(vnfsToBeRemoved,rulesToBeRemoved) #Update the json representation of the deployed graph, by inserting the new VNFs/rules
+
+			updateGraphFile(rulesToBeAdded, vnfsToBeAdded, endpoints, rulesToBeRemoved, vnfsToBeRemoved) #Update the json representation of the deployed graph
 			
 			un_config = updateUniversalNodeConfig(content) #Updates the file containing the current configuration of the universal node, by editing the #<flowtable> and the <NF_instances> and returning the xml
 			
+			resp.content_type = "text/xml"
 			resp.body = un_config
 			resp.status = falcon.HTTP_200
 
@@ -269,15 +269,18 @@ def extractVNFsInstantiated(content):
 	
 	for instance in instances:
 		if instance.get_operation() is None:
-			LOG.error("Update of VNF is not supported by the UN! vnf: " + instance.id.get_value())
-			LOG.error("If you want to create a new instance please set \"operation=create\" to the node element")
-			raise ClientError("Update of VNF is not supported by the UN! vnf: "+instance.id.get_value())
+			LOG.warning("Update of VNF is not supported by the UN! vnf: {0}".format(instance.id.get_value()))
+			LOG.warning("This VNF will be disregarded by the Orchestrator if it already exists, or created if it does not exist")
 
-		if instance.get_operation() == 'delete':
+			#LOG.error("Update of VNF is not supported by the UN! vnf: " + instance.id.get_value())
+			#LOG.error("If you want to create a new instance please set \"operation=create\" to the node element")
+			#raise ClientError("Update of VNF is not supported by the UN! vnf: "+instance.id.get_value())
+
+		elif instance.get_operation() == 'delete':
 			#This network function has to be removed from the universal node
 			continue
 
-		if instance.get_operation() != 'create':
+		elif instance.get_operation() != 'create':
 			LOG.error("Unsupported operation for vnf: " + instance.id.get_value())
 			raise ClientError("Unsupported operation for vnf: "+instance.id.get_value())
 			
@@ -298,16 +301,23 @@ def extractVNFsInstantiated(content):
 		for port_id in instance.ports.port:
 			port = instance.ports[port_id]
 			l4_addresses = port.addresses.l4.get_value()
-			if l4_addresses is not None:
+			# only process l4 address for new VNFs to be created
+			if l4_addresses is not None and instance.get_operation() == 'create':
 				if int(port.id.get_value()) != 0:
 					LOG.error("L4 configuration is supported only to the port with id = 0 on VNF of type '%s'", vnfType)
 					raise ClientError("L4 configuration is supported only to the port with id = 0 on VNF of type " + vnfType)
+				# find all the l4_addresses with regular expression and reformat to request notation "{protocol/port,}"
+				# l4_address format can be "protocol/port: (ip, port)" when sending back a existing vnf
+				l4_addresses_list = re.findall("('[a-z]*\/\d*')", l4_addresses)
+				s= ","
+				l4_addresses = s.join(l4_addresses_list)
+				LOG.debug("l4 adresses: %s", l4_addresses)
 				# Removing not needed chars
 				for ch in ['{','}',' ',"'"]:
 					if ch in l4_addresses:
 						l4_addresses=l4_addresses.replace(ch,"")
+				LOG.debug("l4 adresses: %s", l4_addresses)
 				for l4_address in l4_addresses.split(","):
-					# l4_address format is "protocol/port"
 					tmp = l4_address.split("/")
 					if tmp[0] != "tcp":
 						LOG.error("Only tcp ports are supported on L4 configuration of VNF of type '%s'", vnfType)
@@ -317,8 +327,14 @@ def extractVNFsInstantiated(content):
 					unify_port_mapping[instance.id.get_value() + ":" + port_id + "/" + l4_address] = (unOrchestratorIP, tcp_port)
 					unify_control.append(uc)
 					tcp_port = tcp_port + 1
+			# just copy the existing l4 addresses
+			elif l4_addresses is not None and instance.get_operation() is None:
+				l4_addresses_list = re.findall("'[a-z]*\/(\d*)'\s*:\s*\('[0-9.]*', (\d*)\)", l4_addresses)
+				for vnf_port, host_port in l4_addresses_list:
+					uc = UnifyControl(vnf_tcp_port=int(int(vnf_port)), host_tcp_port=int(host_port))
+					unify_control.append(uc)
 			else:
-				if int(port.id.get_value()) == 0:
+				if int(port.id.get_value()) == 0 :
 					LOG.error("Port with id = 0 should be present only if it has a L4 configuration on VNF of type '%s'", vnfType)
 					raise ClientError("Port with id = 0 should be present only if it has a L4 configuration on VNF of type " + vnfType)
 				unify_ip = None
@@ -390,17 +406,20 @@ def extractRules(content):
 	for flowentry in flowtable:		
 
 		if flowentry.get_operation() is None:
-			LOG.error("Update of flowentry is not supported by the UN! flowentry: " + flowentry.id.get_value())
-			LOG.error("If you want to create a new flowentry please set \"operation=create\" to the flowentry element")
-			raise ClientError("Update of flowentry is not supported by the UN! vnf: "+flowentry.id.get_value())
+			LOG.warning("Update of Flowrules is not supported by the UN! vnf: {0}".format(flowentry.id.get_value()))
+			LOG.warning("This Flowrule will be disregarded by the Orchestrator if it already exists or created if it doesn't exist")
+			#continue
+			#LOG.error("Update of flowentry is not supported by the UN! flowentry: " + flowentry.id.get_value())
+			#LOG.error("If you want to create a new flowentry please set \"operation=create\" to the flowentry element")
+			#raise ClientError("Update of flowentry is not supported by the UN! vnf: "+flowentry.id.get_value())
 
-		if flowentry.get_operation() == 'delete':
+		elif flowentry.get_operation() == 'delete':
 			#This rule has to be removed from the universal node
 			continue
 
-		if flowentry.get_operation() != 'create':
+		elif flowentry.get_operation() != 'create':
 			LOG.error("Unsupported operation for flowentry: " + flowentry.id.get_value())
-			raise ClientError("Unsupported operation for flowentry: "+flowentry.id.get_value())
+			raise ClientError("Unsupported operation for flowentry: " + flowentry.id.get_value())
 
 	
 		flowrule = FlowRule()
@@ -733,12 +752,12 @@ def equivalentAction(tag):
 	'''
 	return constants.equivalent_actions[tag]
 
-def addToGraphFile(newRules,newVNFs, newEndpoints):
+	
+def updateGraphFile (newRules,newVNFs, newEndpoints, rulesToBeRemoved, vnfsToBeRemoved):
 	'''
 	Read the graph currently deployed. It is stored in a tmp file, in a json format.
-	Then, adds to it the new VNFs, the new flowrules and the new endpoints to be instantiated.
+ 	Then, adds to it the new VNFs, the new flowrules and the new endpoints to be instantiated and removes parts to be deleted.
 	'''
-	
 	LOG.debug("Updating the json representation of the whole graph deployed")
 
 	try:
@@ -777,49 +796,22 @@ def addToGraphFile(newRules,newVNFs, newEndpoints):
 			nffg.addEndPoint(endp)
 	if unify_monitoring != "":
 		nffg.unify_monitoring = unify_monitoring
-	
-	LOG.debug("Updated graph:");	
-	LOG.debug("%s",nffg.getJSON());
-	
-	try:
-		tmpFile = open(constants.GRAPH_FILE, "w")
-		tmpFile.write(json.dumps(nffg.getDict(), indent=4, separators=(',', ': ')))
-		tmpFile.close()
-	except IOError as e:
-		print "I/O error({0}): {1}".format(e.errno, e.strerror)
-		raise ServerError("I/O error")
-			
-def removeFromGraphFile(vnfsToBeRemoved,rulesToBeRemoved):
-	'''
-	Read the graph currently deployed. It is stored in a tmp file, in a json format.
-	Then, removes from it the VNFs and the flowrules to be removed
-	'''
-	
-	LOG.debug("Removing VNFs and flowrules from the graph containing the json representation of the graph")
-	
-	try:
-		LOG.debug("Reading file: %s",constants.GRAPH_FILE)
-		tmpFile = open(constants.GRAPH_FILE,"r")
-		json_file = tmpFile.read()
-		tmpFile.close()
-	except IOError as e:
-		print "I/O error({0}): {1}".format(e.errno, e.strerror)
-		raise ServerError("I/O error")
-	
-	nffg_dict = json.loads(json_file)
-	nffg = NF_FG()
-	nffg.parseDict(nffg_dict)
+
+	# Parts to be deleted
 
 	for vnf in nffg.vnfs[:]:
 		if vnf.name in vnfsToBeRemoved:
+			LOG.debug("VNF: %s removed!",vnf.name)
 			nffg.vnfs.remove(vnf)
 	
 	for rule in nffg.flow_rules[:]:
 		if rule.id in rulesToBeRemoved:
+			LOG.debug("Flowrule: %s removed!",rule.id)
 			nffg.flow_rules.remove(rule)
 	
 	for endpoint in nffg.end_points[:]:
 		if not nffg.getFlowRulesSendingTrafficToEndPoint(endpoint.id) and not nffg.getFlowRulesSendingTrafficFromEndPoint(endpoint.id):
+			LOG.debug("Endpoint: %s removed!",endpoint.id)
 			nffg.end_points.remove(endpoint)
 	
 	LOG.debug("Updated graph:");	

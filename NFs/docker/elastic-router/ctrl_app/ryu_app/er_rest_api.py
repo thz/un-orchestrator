@@ -36,6 +36,8 @@ class er_rest_api():
         self.log.debug('start scale in')
         if len(scaling_ports) > 0:
             self.ER_app.VNFs_to_be_deleted = self.ER_app.scale(scaling_ports, 'in')
+            self.er_monitor.scaling_lock.acquire()
+            self.er_monitor.scaling_lock.release()
         else:
             return 'scaling in not possible'
         return 'scaling in finished'
@@ -45,6 +47,8 @@ class er_rest_api():
         self.log.debug('start scale out')
         if len(scaling_ports) > 0:
             self.ER_app.VNFs_to_be_deleted = self.ER_app.scale(scaling_ports, 'out')
+            self.er_monitor.scaling_lock.acquire()
+            self.er_monitor.scaling_lock.release()
         else:
             return 'scaling out not possible'
         return 'scaling out finished'

@@ -18,6 +18,10 @@ cp orchestrator_config_er_demo.ini ../../../orchestrator/config/
 cp universal-node-er-demo.xml ../../../orchestrator/config/
 cp nffg_files/er_nffg.json ../../../orchestrator/config/
 
+#start virtualizer
+#sudo ./start_virtualizer &
+
+
 cd ../../../orchestrator/
 sudo ./node-orchestrator --d ./config/orchestrator_config_er_demo.ini
 

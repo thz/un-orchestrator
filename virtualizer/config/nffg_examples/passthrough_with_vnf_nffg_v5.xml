@@ -74,22 +74,6 @@
 								<!-- note: the format below is a Python set: -->
 								<l4>{'tcp/22', 'tcp/80'}</l4>
 							</addresses>
-							<metadata>
-								<key>measure</key>
-								<value>test measure</value>
-							  </metadata>
-							  <metadata>
-								<key>variable:vxlan_key</key>
-								<value>11</value>
-							  </metadata>
-							  <metadata>
-								<key>variable:vxlan_localip</key>
-								<value>10.1.2.10</value>
-							  </metadata>
-							  <metadata>
-								<key>variable:vxlan_remoteip</key>
-								<value>10.0.2.108</value>
-							  </metadata>
 							<capability/>
 						</port>
 						<port>
@@ -112,6 +96,22 @@
 							<capability/>
 						</port>
 					</ports>
+					<metadata>
+						<key>measure</key>
+						<value>test measure</value>
+					  </metadata>
+					  <metadata>
+						<key>variable:vxlan_key</key>
+						<value>11</value>
+					  </metadata>
+					  <metadata>
+						<key>variable:vxlan_localip</key>
+						<value>10.1.2.10</value>
+					  </metadata>
+					  <metadata>
+						<key>variable:vxlan_remoteip</key>
+						<value>10.0.2.108</value>
+					  </metadata>
 				</node>
 			</NF_instances>
 			<flowtable>

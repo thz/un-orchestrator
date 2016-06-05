@@ -46,7 +46,7 @@ def process_nffg(nffg_json):
 
                 logging.debug("found ovs port: %s with ovs id: %s", portName, ovsId)
 
-    # first make all the ovs instances with all th ports,
+    # first make all the ovs instances with all the ports,
     # then fill the linked ports
     # this function is only used to parse the first nffg, external ports only
     for ovs_name in ovs_instances:
@@ -114,6 +114,7 @@ def add_vnf(nffg_json, id, name, vnftype, numports):
 
     return nffg.getJSON()
 
+
 def get_next_flowrule_id(nffg_json, add=0):
     json_dict = json.loads(nffg_json)
     nffg = NF_FG()
@@ -123,7 +124,16 @@ def get_next_flowrule_id(nffg_json, add=0):
     for flowrule in nffg.flow_rules:
         id = int(flowrule.id)
         flow_id_list.append(id)
-    max_id = max(flow_id_list)
+
+    # http://stackoverflow.com/questions/3149440/python-splitting-list-based-on-missing-numbers-in-a-sequence
+    # group the sorted list unitl a value is missing (the deleted vnf id)
+    sorted_vnf_id_list = sorted(flow_id_list)
+    list = []
+    for k, g in groupby(enumerate(sorted_vnf_id_list), lambda (i, x): i - x):
+        list.append(map(itemgetter(1), g))
+
+    max_id = max(list[0])
+
     if max_id == 999999999:
         max_id = 0
     next_id_str = str(max_id+1+add).zfill(9)
