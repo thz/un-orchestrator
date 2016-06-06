@@ -469,7 +469,7 @@ def extractRules(content):
 				raise ClientError("Physical port "+ port.name.get_value()+" is not present in the UN")
 			port_name = physicalPortsVirtualization[port.name.get_value()]		
 			if port_name not in endpoints_dict:
-				endpoints_dict[port_name] = EndPoint(_id = str(endpoint_id) ,_type = "interface", interface = port_name)
+				endpoints_dict[port_name] = EndPoint(_id = str(endpoint_id) ,_type = "interface", interface = port_name, name = port.name.get_value())
 				endpoint_id = endpoint_id + 1
 			match.port_in = "endpoint:" + endpoints_dict[port_name].id
 		elif tokens[4] == 'NF_instances':
@@ -523,7 +523,7 @@ def extractRules(content):
 			#the real name of the port on the universal node
 			port_name = physicalPortsVirtualization[port.name.get_value()]		
 			if port_name not in endpoints_dict:
-				endpoints_dict[port_name] = EndPoint(_id = str(endpoint_id) ,_type = "interface", interface = port_name)
+				endpoints_dict[port_name] = EndPoint(_id = str(endpoint_id) ,_type = "interface", interface = port_name, name = port.name.get_value())
 				endpoint_id = endpoint_id + 1
 			flowrule.actions.append(Action(output = "endpoint:" + endpoints_dict[port_name].id))
 		elif tokens[4] == 'NF_instances':
@@ -927,7 +927,6 @@ def instantiateOnUniversalNode(rulesToBeAdded,vnfsToBeAdded, endpoints):
 	for endpoint in nffg.end_points[:]:
 		if not nffg.getFlowRulesSendingTrafficToEndPoint(endpoint.id) and not nffg.getFlowRulesSendingTrafficFromEndPoint(endpoint.id):
 			nffg.end_points.remove(endpoint)
-			endpoints.remove(endpoint)
 	
 	LOG.debug("Graph that is going to be sent to the universal node orchestrator:")
 	LOG.debug("%s",nffg.getJSON())
