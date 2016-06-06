@@ -1554,6 +1554,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	*		- environment variables
 	*		- control connections
 	*	- internal endpoints not supported
+	*	- management endpoints not supported
 	**/
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Updating the graph '%s' with new 'pieces'...",graphID.c_str());
@@ -1934,8 +1935,21 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	for(list<highlevel::EndPointInternal>::iterator ep = tmp_internal_endpoints.begin(); ep != tmp_internal_endpoints.end(); ep++)
 	{
 		//TODO: implement the creation of new internal endpoints
-		assert(0 && "The creation of new internal endpoint in the update is not supported yet!");
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The creation of new internal endpoint in the update is not supported yet!");
+		assert(0);
+	}
+
+	/**
+	*	3-e) condider the management endpoints
+	*/
+	highlevel::EndPointManagement *tmp_management_endpoint = diff->getEndPointManagement();
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "3-d) considering the new management endpoint (%d)",tmp_management_endpoint==NULL? 0:1);
+
+	if(tmp_management_endpoint!=NULL)
+	{
+		//TODO: implement the creation of new management endpoint, keeping in mind that only one management endpoint per graph can exists!
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The creation of new management endpoint in the update is not supported yet!");
+		assert(0);
 	}
 
 	/**
@@ -2021,6 +2035,7 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 	*		- environment variables
 	*		- control connections
 	*	- internal endpoints not supported
+	*	- management endpoints not supported
 	**/
 
 
