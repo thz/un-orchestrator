@@ -176,11 +176,6 @@ extern ofp_version_t OFP_VERSION;
  #define NUMBER_OF_CORES			 "4"
 
 /*
- *	Misc
- */
- #define GRAPH_ID					"NF-FG"
-
-/*
 *	Name of the file used to print log information
 */
 #ifdef LOG_ON_FILE
@@ -217,5 +212,6 @@ extern ofp_version_t OFP_VERSION;
 *	Misc
 */
 #define DEFAULT_GRAPH 		"DEFAULT-GRAPH"
+#define GRAPH_ID					"NF-FG"
 
 #endif //CONSTANTS_H_

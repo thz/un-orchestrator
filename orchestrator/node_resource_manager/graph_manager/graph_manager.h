@@ -19,6 +19,10 @@
 #include "../graph/graph-parser/match_parser.h"
 #include "../graph/high_level_graph/high_level_graph_vnf.h"
 
+#ifdef ENABLE_RESOURCE_MANAGER
+#include "../resource_manager/resource_manager.h"
+#endif
+
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
 	#define SWITCH_MANAGER_IMPLEMENTATION XDPDManager
@@ -221,7 +225,7 @@ private:
 	*	@brief: remove pieces from an existing graph with a
 	*		specific ID.
 	*/
-	bool updateGraph_remove(string graphID, highlevel::Graph *newGraph);
+	highlevel::Graph *updateGraph_remove(string graphID, highlevel::Graph *newGraph);
 
 public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF

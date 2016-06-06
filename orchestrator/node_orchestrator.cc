@@ -226,7 +226,8 @@ int main(int argc, char *argv[])
 	}
 
 #ifdef ENABLE_RESOURCE_MANAGER
-	ResourceManager::publishDescriptionFromFile(descr_file_name);
+	if(!ResourceManager::init(descr_file_name))
+		exit(EXIT_FAILURE);
 #endif
 
 	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, rest_port, NULL, NULL,&RestServer::answer_to_connection,

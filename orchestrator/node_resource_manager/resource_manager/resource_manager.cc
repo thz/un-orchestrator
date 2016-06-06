@@ -1,8 +1,9 @@
 #include "resource_manager.h"
 #include "description_parser.h"
-#include "domain_description/domain_description.h"
 
-void ResourceManager::publishDescriptionFromFile(char *descr_file)
+domainInformations::DomainDescription *ResourceManager::domainDescription = NULL;
+
+bool ResourceManager::init(char *descr_file)
 {
 	assert(descr_file != NULL);
 
@@ -10,9 +11,19 @@ void ResourceManager::publishDescriptionFromFile(char *descr_file)
 
 	readDescriptionFromFile(descr_file, fileContent);
 
-	domainInformations::DomainDescription *domainDescription = new domainInformations::DomainDescription();
+	domainDescription = new domainInformations::DomainDescription();
 
-	DescriptionParser::parseDescription(fileContent, domainDescription);
+	if(!DescriptionParser::parseDescription(fileContent, domainDescription))
+		return false;
+
+	publishDescription();
+
+	return true;
+}
+
+void ResourceManager::publishDescription()
+{
+	assert(domainDescription!=NULL);
 
 	Object json = domainDescription->toJSON();
 	stringstream ssj;
@@ -50,6 +61,15 @@ bool ResourceManager::readDescriptionFromFile(char *filename, string &fileConten
 	return true;
 }
 
+void ResourceManager::updateDescription(highlevel::Graph *positiveGraph, highlevel::Graph *negativeGraph)
+{
+
+	//TODO
+	//problems
+	// -> in domain description gre ep are related to its interface, but this information is unknown!
+	// -> how export internal ep in order to inform uplayer domain to not use some id?
+
+}
 
 //TODO currently not used. It must be ported to use the new DD client
 #if 0

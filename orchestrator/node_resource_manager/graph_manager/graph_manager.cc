@@ -478,6 +478,10 @@ bool GraphManager::deleteGraph(string graphID)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The internal graph associated with the internal group '%s' is still used by %d other graphs",internal_group.c_str(),timesUsedEndPointsInternal[internal_group]);
 	}//end iteration on the internal endpoints
 
+#ifdef ENABLE_RESOURCE_MANAGER
+	ResourceManager::updateDescription(NULL,highLevelGraph);
+#endif
+
 	delete(highLevelGraph);
 	highLevelGraph = NULL;
 
@@ -598,6 +602,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*		5) create the OpenFlow controller for the internal LSIs (if it does not exist yet)
 	*		6) create the internal LSI (if it does not exist yet), with the proper vlinks and download the rules in internal-LSI
 	*		7) download the rules in LSI-0, tenant-LSI
+	*		8) publish the domain description with new informations (if required)
 	*/
 
 	/**
@@ -1160,6 +1165,13 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 		throw GraphManagerException();
 	}
+
+	/**
+	*	8) publish the domain description with new informations
+	*/
+#ifdef ENABLE_RESOURCE_MANAGER
+	ResourceManager::updateDescription(graph,NULL);
+#endif
 	return true;
 }
 
@@ -1452,25 +1464,41 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newGraph)
 	*/
 
 	highlevel::Graph *diff_to_add = NULL;
+	highlevel::Graph *diff_to_del = NULL;
 	try
 	{
 		diff_to_add = updateGraph_add(graphID,newGraph);
+		diff_to_del = updateGraph_remove(graphID,newGraph);
 	}
 	catch(GraphManagerException e)
 	{
-		delete(diff_to_add);
-		diff_to_add = NULL;
+		if(diff_to_add!=NULL)
+		{
+			delete(diff_to_add);
+			diff_to_add = NULL;
+		}
+		if(diff_to_del!=NULL)
+		{
+			delete(diff_to_del);
+			diff_to_del = NULL;
+		}
 		return false;
 	}
 
-	if(!updateGraph_remove(graphID,newGraph))
+	if(!updateGraph_add_rules(graphID,diff_to_add))
 	{
 		delete(diff_to_add);
-		diff_to_add = NULL;
+		delete(diff_to_del);
 		return false;
 	}
 
-	return updateGraph_add_rules(graphID,diff_to_add);
+#ifdef ENABLE_RESOURCE_MANAGER
+	ResourceManager::updateDescription(diff_to_add,diff_to_del);
+#endif
+
+	delete(diff_to_add);
+	delete(diff_to_del);
+	return true;
 }
 
 bool GraphManager::updateGraph_add_rules(string graphID, highlevel::Graph *diff)
@@ -1510,14 +1538,9 @@ bool GraphManager::updateGraph_add_rules(string graphID, highlevel::Graph *diff)
 	{
 		//TODO: no idea on what I have to do at this point
 		assert(0);
-		delete(diff);
-		diff = NULL;
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 		return false;
 	}
-
-	delete(diff);
-	diff = NULL;
 
 	return true;
 }
@@ -1968,7 +1991,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	return diff;
 }
 
-bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph)
+highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph)
 {
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Updating the graph '%s' by removing parts...",graphID.c_str());
 
@@ -2143,7 +2166,7 @@ bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph
 
 	//TODO: , phy ports- add an error in case internal endpoints have to be removed
 
-	return true;
+	return diff;
 }
 
 void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *graph, LSI *lsi)
