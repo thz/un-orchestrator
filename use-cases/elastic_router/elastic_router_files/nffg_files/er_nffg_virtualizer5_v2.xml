@@ -154,6 +154,10 @@
 							</addresses>
 						</port>
 					</ports>
+					<metadata>
+						<key>measure</key>
+						<value>test measure ctrl</value>
+				        </metadata>
 					<!-- 
 						use the meta-data as configuration interface to set the orchestrator interface 
 						This can be pre-filled from the SG, or set by the orchestrator
@@ -255,6 +259,10 @@
 						<key>variable:CONTROLLER</key>
 						<value>tcp:10.0.10.100:6633</value>
 					</metadata>
+					<metadata>
+						<key>measure</key>
+						<value>test measure ovs1</value>
+				        </metadata>
 				</node>
 			</NF_instances>
 			<flowtable>

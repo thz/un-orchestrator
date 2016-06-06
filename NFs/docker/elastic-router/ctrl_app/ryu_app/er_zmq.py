@@ -7,6 +7,7 @@ import logging
 #Set the logger
 #logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
+import time
 
 CTX = zmq.Context(1)
 
@@ -59,6 +60,7 @@ class er_zmq:
         while True:
             msg = DD_proxy.recv_multipart()
             self.log.info("Received ALARM: {0}".format(msg))
+            start_time = time.time()
 
             scaling_ports = []
             if 'scale_in' in msg[2]:
@@ -78,3 +80,6 @@ class er_zmq:
                     # wait unit scaling lock is released
                     self.er_monitor.scaling_lock.acquire()
                     self.er_monitor.scaling_lock.release()
+
+            scaling_time = time.time() - start_time
+            logging.info('scaling finished ({0} seconds)'.format(round(scaling_time, 2)))

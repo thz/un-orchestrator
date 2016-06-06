@@ -350,6 +350,8 @@ def add_ovs_vnf(nffg_xml, nffg_id, ovs_id, name, vnftype, numports):
     vnf.metadata.add(MetadataMetadata(key='variable:OVS_DPID', value='99{0}'.format(str(ovs_id).zfill(14))))
     vnf.metadata.add(MetadataMetadata(key='variable:CONTROLLER', value='tcp:10.0.10.100:6633'))
 
+    vnf.metadata.add(MetadataMetadata(key='measure', value='test measure {0}'.format(name)))
+
     vnf.set_operation(operation="create",  recursive=False)
     un.NF_instances.add(vnf)
 

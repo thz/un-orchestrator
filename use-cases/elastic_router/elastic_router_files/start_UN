@@ -24,13 +24,13 @@ sudo ./node-orchestrator --d ./config/orchestrator_config_er_demo.ini &
 
 #start virtualizer
 cd ../virtualizer
-gunicorn -b 0.0.0.0:9090 virtualizer:api --timeout 60
+sudo gunicorn -b 0.0.0.0:9090 virtualizer:api --timeout 60
 #sudo ./start_virtualizer &
 
 
-#after kill make sure dockers are removed
-docker rm -f 2_ctrl 2_ovs1 2_ovs2 2_ovs3 2_ovs4 2_ovs5
-
 # kill last backgrounded process (name-resolver or node orchestrartor)
 kill $!
- 
+
+#after kill make sure dockers are removed
+sudo docker rm -f 2_ctrl 2_ovs1 2_ovs2 2_ovs3 2_ovs4 2_ovs5
+
