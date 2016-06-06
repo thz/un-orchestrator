@@ -28,7 +28,7 @@ class er_ddclient:
         # process the received message, receive from other process
         sub_server = hub.spawn(self.receive_data, readend)
 
-        # send received DD messages (ddclient only works as Process, other type of threads are blocking)
+        # send received DD messages (ddclient only works as Process, other type of threads are blocking the main thread)
         p = gipc.start_process(target=self.alarm_receiver, args=(writeend,))
 
     def receive_data(self, conn):
