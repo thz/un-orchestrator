@@ -18,13 +18,19 @@ cp orchestrator_config_er_demo.ini ../../../orchestrator/config/
 cp universal-node-er-demo.xml ../../../orchestrator/config/
 cp nffg_files/er_nffg.json ../../../orchestrator/config/
 
+
+cd ../../../orchestrator/
+sudo ./node-orchestrator --d ./config/orchestrator_config_er_demo.ini &
+
 #start virtualizer
+cd ../virtualizer
+sudo gunicorn -b 0.0.0.0:9090 virtualizer:api --timeout 60
 #sudo ./start_virtualizer &
 
 
-cd ../../../orchestrator/
-sudo ./node-orchestrator --d ./config/orchestrator_config_er_demo.ini
-
-# kill last backgrounded process (name-resolver)
+# kill last backgrounded process (name-resolver or node orchestrartor)
 kill $!
- 
+
+#after kill make sure dockers are removed
+sudo docker rm -f 2_ctrl 2_ovs1 2_ovs2 2_ovs3 2_ovs4 2_ovs5
+

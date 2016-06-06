@@ -311,7 +311,6 @@ def extractVNFsInstantiated(content):
 				l4_addresses_list = re.findall("('[a-z]*\/\d*')", l4_addresses)
 				s= ","
 				l4_addresses = s.join(l4_addresses_list)
-				LOG.debug("l4 adresses: %s", l4_addresses)
 				# Removing not needed chars
 				for ch in ['{','}',' ',"'"]:
 					if ch in l4_addresses:
@@ -367,7 +366,7 @@ def extractVNFsInstantiated(content):
 					tmp = key.split(":",1)
 					unify_env_variables.append(tmp[1]+"="+value)
 				elif key.startswith("measure"):
-					unify_monitoring = unify_monitoring + value
+					unify_monitoring = unify_monitoring + " " + value
 				else:
 					LOG.error("Unsupported metadata " + key)
 					raise ClientError("Unsupported metadata " + key)

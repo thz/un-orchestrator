@@ -311,7 +311,7 @@ class ElasticRouter(app_manager.RyuApp):
 
     def scale_finish(self):
 
-        self.logger.info('set new flows with higher prioirity')
+        self.logger.info('set new flows with higher priority')
 
         self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
 
@@ -343,7 +343,7 @@ class ElasticRouter(app_manager.RyuApp):
         # need some time here to delete all flows, otherwise packet loss
         #hub.sleep(5)
 
-        self.logger.info('add new flows with prioirity 10')
+        self.logger.info('add new flows with priority 10')
 
         self.VNFs_to_be_deleted = []
         #self.scaled_nffg = None
@@ -359,7 +359,7 @@ class ElasticRouter(app_manager.RyuApp):
         # need some time here to install flows, otherwise packet loss
         hub.sleep(1)
 
-        self.logger.info('delete old flows with prioirity 9-11')
+        self.logger.info('delete old flows with priority 9-11')
 
         #new_nffg = er_nffg.get_nffg(self.REST_Cf_Or)
         #need some time here to install flows, otherwise packet loss
