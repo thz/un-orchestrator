@@ -269,15 +269,18 @@ def extractVNFsInstantiated(content):
 	
 	for instance in instances:
 		if instance.get_operation() is None:
-			LOG.error("Update of VNF is not supported by the UN! vnf: " + instance.id.get_value())
-			LOG.error("If you want to create a new instance please set \"operation=create\" to the node element")
-			raise ClientError("Update of VNF is not supported by the UN! vnf: "+instance.id.get_value())
+			LOG.warning("Update of VNF is not supported by the UN! vnf: {0}".format(instance.id.get_value()))
+			LOG.warning("This VNF will be disregarded by the Orchestrator if it already exists, or created if it does not exist")
 
-		if instance.get_operation() == 'delete':
+			#LOG.error("Update of VNF is not supported by the UN! vnf: " + instance.id.get_value())
+			#LOG.error("If you want to create a new instance please set \"operation=create\" to the node element")
+			#raise ClientError("Update of VNF is not supported by the UN! vnf: "+instance.id.get_value())
+
+		elif instance.get_operation() == 'delete':
 			#This network function has to be removed from the universal node
 			continue
 
-		if instance.get_operation() != 'create':
+		elif instance.get_operation() != 'create':
 			LOG.error("Unsupported operation for vnf: " + instance.id.get_value())
 			raise ClientError("Unsupported operation for vnf: "+instance.id.get_value())
 			
@@ -298,16 +301,22 @@ def extractVNFsInstantiated(content):
 		for port_id in instance.ports.port:
 			port = instance.ports[port_id]
 			l4_addresses = port.addresses.l4.get_value()
-			if l4_addresses is not None:
+			# only process l4 address for new VNFs to be created
+			if l4_addresses is not None and instance.get_operation() == 'create':
 				if int(port.id.get_value()) != 0:
 					LOG.error("L4 configuration is supported only to the port with id = 0 on VNF of type '%s'", vnfType)
 					raise ClientError("L4 configuration is supported only to the port with id = 0 on VNF of type " + vnfType)
+				# find all the l4_addresses with regular expression and reformat to request notation "{protocol/port,}"
+				# l4_address format can be "protocol/port: (ip, port)" when sending back a existing vnf
+				l4_addresses_list = re.findall("('[a-z]*\/\d*')", l4_addresses)
+				s= ","
+				l4_addresses = s.join(l4_addresses_list)
 				# Removing not needed chars
 				for ch in ['{','}',' ',"'"]:
 					if ch in l4_addresses:
 						l4_addresses=l4_addresses.replace(ch,"")
+				LOG.debug("l4 adresses: %s", l4_addresses)
 				for l4_address in l4_addresses.split(","):
-					# l4_address format is "protocol/port"
 					tmp = l4_address.split("/")
 					if tmp[0] != "tcp":
 						LOG.error("Only tcp ports are supported on L4 configuration of VNF of type '%s'", vnfType)
@@ -317,8 +326,14 @@ def extractVNFsInstantiated(content):
 					unify_port_mapping[instance.id.get_value() + ":" + port_id + "/" + l4_address] = (unOrchestratorIP, tcp_port)
 					unify_control.append(uc)
 					tcp_port = tcp_port + 1
+			# just copy the existing l4 addresses
+			elif l4_addresses is not None and instance.get_operation() is None:
+				l4_addresses_list = re.findall("'[a-z]*\/(\d*)'\s*:\s*\('[0-9.]*', (\d*)\)", l4_addresses)
+				for vnf_port, host_port in l4_addresses_list:
+					uc = UnifyControl(vnf_tcp_port=int(int(vnf_port)), host_tcp_port=int(host_port))
+					unify_control.append(uc)
 			else:
-				if int(port.id.get_value()) == 0:
+				if int(port.id.get_value()) == 0 :
 					LOG.error("Port with id = 0 should be present only if it has a L4 configuration on VNF of type '%s'", vnfType)
 					raise ClientError("Port with id = 0 should be present only if it has a L4 configuration on VNF of type " + vnfType)
 				unify_ip = None
@@ -351,7 +366,7 @@ def extractVNFsInstantiated(content):
 					tmp = key.split(":",1)
 					unify_env_variables.append(tmp[1]+"="+value)
 				elif key.startswith("measure"):
-					unify_monitoring = unify_monitoring + value
+					unify_monitoring = unify_monitoring + " " + value
 				else:
 					LOG.error("Unsupported metadata " + key)
 					raise ClientError("Unsupported metadata " + key)
@@ -390,17 +405,20 @@ def extractRules(content):
 	for flowentry in flowtable:		
 
 		if flowentry.get_operation() is None:
-			LOG.error("Update of flowentry is not supported by the UN! flowentry: " + flowentry.id.get_value())
-			LOG.error("If you want to create a new flowentry please set \"operation=create\" to the flowentry element")
-			raise ClientError("Update of flowentry is not supported by the UN! vnf: "+flowentry.id.get_value())
+			LOG.warning("Update of Flowrules is not supported by the UN! vnf: {0}".format(flowentry.id.get_value()))
+			LOG.warning("This Flowrule will be disregarded by the Orchestrator if it already exists or created if it doesn't exist")
+			#continue
+			#LOG.error("Update of flowentry is not supported by the UN! flowentry: " + flowentry.id.get_value())
+			#LOG.error("If you want to create a new flowentry please set \"operation=create\" to the flowentry element")
+			#raise ClientError("Update of flowentry is not supported by the UN! vnf: "+flowentry.id.get_value())
 
-		if flowentry.get_operation() == 'delete':
+		elif flowentry.get_operation() == 'delete':
 			#This rule has to be removed from the universal node
 			continue
 
-		if flowentry.get_operation() != 'create':
+		elif flowentry.get_operation() != 'create':
 			LOG.error("Unsupported operation for flowentry: " + flowentry.id.get_value())
-			raise ClientError("Unsupported operation for flowentry: "+flowentry.id.get_value())
+			raise ClientError("Unsupported operation for flowentry: " + flowentry.id.get_value())
 
 	
 		flowrule = FlowRule()
@@ -909,7 +927,6 @@ def instantiateOnUniversalNode(rulesToBeAdded,vnfsToBeAdded, endpoints):
 	for endpoint in nffg.end_points[:]:
 		if not nffg.getFlowRulesSendingTrafficToEndPoint(endpoint.id) and not nffg.getFlowRulesSendingTrafficFromEndPoint(endpoint.id):
 			nffg.end_points.remove(endpoint)
-			#endpoints.remove(endpoint)
 	
 	LOG.debug("Graph that is going to be sent to the universal node orchestrator:")
 	LOG.debug("%s",nffg.getJSON())
