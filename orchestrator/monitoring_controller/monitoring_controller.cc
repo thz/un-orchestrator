@@ -4,23 +4,23 @@ MonitoringController::MonitoringController()
 {
 }
 
-void MonitoringController::startMonitoring(string measure_string, list< pair<string, string> > vnfsMapping, list<map<unsigned int, string> > portsMapping)
+void MonitoringController::startMonitoring(string measure_string, list< pair<string, string> > portsMapping, list< pair<string, string> > vnfsMapping, list<map<unsigned int, string> > vnfsPortsMapping)
 {
 	logger(ORCH_INFO, MONITORING_CONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Starting a monitoring session (through the monitoring plugin)");
 	logger(ORCH_WARNING, MONITORING_CONTROLLER_MODULE_NAME, __FILE__, __LINE__, "The monitoring is supported only in 'veth' ports towards VNFs");
 	
-	assert(vnfsMapping.size() == portsMapping.size());
+	assert(vnfsMapping.size() == vnfsPortsMapping.size());
 
 	//Prepare the json to publish on the Double Decker bus
-	list<map<unsigned int, string> >::iterator portMapping = portsMapping.begin();
+	list<map<unsigned int, string> >::iterator vnfPortMapping = vnfsPortsMapping.begin();
 	list<pair<string, string> >::iterator vnfMapping = vnfsMapping.begin();
 
 	Array vnfs_array;
-	for(; portMapping != portsMapping.end(); portMapping++, vnfMapping++)
+	for(; vnfPortMapping != vnfsPortsMapping.end(); vnfPortMapping++, vnfMapping++)
 	{
 		Array ports;
 
-		map<unsigned int, string> aMapping = *portMapping;
+		map<unsigned int, string> aMapping = *vnfPortMapping;
 		for(map<unsigned int, string>::iterator mm = aMapping.begin(); mm != aMapping.end(); mm++)
 		{
 			Object port;

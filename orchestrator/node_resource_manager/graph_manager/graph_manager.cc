@@ -1076,9 +1076,13 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		MonitoringController *monitoringController = new MonitoringController();
 		graphInfoTenantLSI.setMonitoringController(monitoringController);
 
+		//Prepare the info related to the physical ports
+		list< pair<string, string> > portsMapping;
+		//TODO
+
 		//XXX super ad hoc code that makes assumptions on how the compute controller creates the names 
 		list< pair<string, string> > vnfsMapping;
-		list<map<unsigned int, string> > portsMapping;
+		list<map<unsigned int, string> > vnfsPortsMapping;
 		
 		list<highlevel::VNFs> vnfs = graph->getVNFs();
 		for(list<highlevel::VNFs>::iterator vnf = vnfs.begin(); vnf != vnfs.end(); vnf++)
@@ -1086,10 +1090,10 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			stringstream name;
 			name << dpid << "_" << vnf->getName();
 			vnfsMapping.push_back(make_pair(vnf->getId(),name.str()));
-			portsMapping.push_back(lsi->getNetworkFunctionsPortsNameOnSwitchMap(vnf->getName()));
+			vnfsPortsMapping.push_back(lsi->getNetworkFunctionsPortsNameOnSwitchMap(vnf->getName()));
 		}
 
-		monitoringController->startMonitoring(graph->getMeasureString(),vnfsMapping,portsMapping);
+		monitoringController->startMonitoring(graph->getMeasureString(),portsMapping,vnfsMapping,vnfsPortsMapping);
 #endif
 	} catch (SwitchManagerException e)
 	{
@@ -1616,9 +1620,13 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 
 		MonitoringController *monitoringController = (tenantLSIs.find(graphID))->second.getMonitoringController();
 
+		//Prepare the info related to the physical ports
+		list< pair<string, string> > portsMapping;
+		//TODO
+
 		//XXX super ad hoc code that makes assumptions on how the compute controller creates the names 
 		list< pair<string, string> > vnfsMapping;
-		list<map<unsigned int, string> > portsMapping;
+		list<map<unsigned int, string> > vnfsPortsMapping;
 		
 		list<highlevel::VNFs> vnfs = graph->getVNFs();
 		for(list<highlevel::VNFs>::iterator vnf = vnfs.begin(); vnf != vnfs.end(); vnf++)
@@ -1627,10 +1635,10 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 			name << dpid << "_" << vnf->getName();
 			vnfsMapping.push_back(make_pair(vnf->getId(),name.str()));
 			
-			portsMapping.push_back(lsi->getNetworkFunctionsPortsNameOnSwitchMap(vnf->getName()));
+			vnfsPortsMapping.push_back(lsi->getNetworkFunctionsPortsNameOnSwitchMap(vnf->getName()));
 		}
 
-		monitoringController->startMonitoring(graph->getMeasureString(),vnfsMapping,portsMapping);
+		monitoringController->startMonitoring(graph->getMeasureString(),portsMapping,vnfsMapping,vnfsPortsMapping);
 #endif
 
 	} catch (SwitchManagerException e)
