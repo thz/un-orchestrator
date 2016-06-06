@@ -12,9 +12,21 @@ void MonitoringController::startMonitoring(string measure_string, list< pair<str
 	assert(vnfsMapping.size() == vnfsPortsMapping.size());
 
 	//Prepare the json to publish on the Double Decker bus
+
+	//Handle the physical ports
+	Array sap_array;
+	for(list< pair<string, string> >::iterator port = portsMapping.begin(); port != portsMapping.end();port++)
+	{
+		Object sap;
+		sap["name"] = port->first;
+		sap["interface"] = port->second;
+
+		sap_array.push_back(sap);
+	}
+
+	//Handle the VNFs
 	list<map<unsigned int, string> >::iterator vnfPortMapping = vnfsPortsMapping.begin();
 	list<pair<string, string> >::iterator vnfMapping = vnfsMapping.begin();
-
 	Array vnfs_array;
 	for(; vnfPortMapping != vnfsPortsMapping.end(); vnfPortMapping++, vnfMapping++)
 	{
@@ -45,6 +57,7 @@ void MonitoringController::startMonitoring(string measure_string, list< pair<str
 	Object nffg;
 	nffg["measure"] = measure_string.c_str();
 	nffg["VNFs"] = vnfs_array;
+	nffg["sap"] = sap_array;
 	
 	Object params;
 	params["nffg"] = nffg;
@@ -57,7 +70,7 @@ void MonitoringController::startMonitoring(string measure_string, list< pair<str
 	stringstream message;
 	write_formatted(json,message);
 
-	logger(ORCH_DEBUG_INFO, MONITORING_CONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Sending the following message to the plugin monitor:");
+	logger(ORCH_DEBUG_INFO, MONITORING_CONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Sending the following message to the monitoring plugin:");
 	logger(ORCH_DEBUG_INFO, MONITORING_CONTROLLER_MODULE_NAME, __FILE__, __LINE__, "%s",message.str().c_str());
 
 	DoubleDeckerClient::publish(UNIFY_MPP,message.str().c_str());

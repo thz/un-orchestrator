@@ -1078,7 +1078,9 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 		//Prepare the info related to the physical ports
 		list< pair<string, string> > portsMapping;
-		//TODO
+		list<highlevel::EndPointInterface> epsInterface = graph->getEndPointsInterface();
+		for(list<highlevel::EndPointInterface>::iterator interface = epsInterface.begin(); interface != epsInterface.end(); interface++)
+			portsMapping.push_back(make_pair(interface->getName(),interface->getInterface()));
 
 		//XXX super ad hoc code that makes assumptions on how the compute controller creates the names 
 		list< pair<string, string> > vnfsMapping;

@@ -76,6 +76,25 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 						//XXX: currently, this information is ignored
 					}
+					else if(fg_name == UNIFY_MONITORING)
+					{
+#ifndef ENABLE_UNIFY_MONITORING_CONTROLLER
+						logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" is ignored in this configuration of the %s!",UNIFY_MONITORING,MODULE_NAME);
+						continue;
+#else
+						try{
+							fg_value.getString();
+						} catch(exception& e)
+						{
+							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Array", UNIFY_MONITORING);
+							return false;
+						}
+			 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",FORWARDING_GRAPH,UNIFY_MONITORING,fg_value.getString().c_str());
+
+						//set the measure string
+						graph.setMeasureString(fg_value.getString());
+#endif
+					}
 					//Identify the VNFs
 					else if(fg_name == VNFS)
 					{
