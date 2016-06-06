@@ -1347,6 +1347,13 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 		string tmp_ep = mep->first;
 	}
 
+	//Update the "interface" endpoints
+	list<highlevel::EndPointInterface> newEpsInterface = newPiece->getEndPointsInterface();
+	for(list<highlevel::EndPointInterface>::iterator interface = newEpsInterface.begin(); interface != newEpsInterface.end(); interface++)
+	{
+		graph->addEndPointInterface(*interface);
+	}
+
 #ifdef ENABLE_UNIFY_MONITORING_CONTROLLER
 	//Update the measure string
 	graph->setMeasureString(newPiece->getMeasureString());
@@ -1624,7 +1631,9 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 
 		//Prepare the info related to the physical ports
 		list< pair<string, string> > portsMapping;
-		//TODO
+		list<highlevel::EndPointInterface> epsInterface = graph->getEndPointsInterface();
+		for(list<highlevel::EndPointInterface>::iterator interface = epsInterface.begin(); interface != epsInterface.end(); interface++)
+			portsMapping.push_back(make_pair(interface->getName(),interface->getInterface()));
 
 		//XXX super ad hoc code that makes assumptions on how the compute controller creates the names 
 		list< pair<string, string> > vnfsMapping;
