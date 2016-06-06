@@ -38,7 +38,8 @@ class er_zmq:
 
         #sub_server = hub.spawn(self.DDclient.start)
         #self.DDclient = None
-        sub_server = hub.spawn(self.alarm_receiver, self.DDclient)
+        #hub.connect
+        sub_server = hub.spawn(self.alarm_receiver,ER_instance ,ER_monitor)
         #self.DDclient.start()
 
         #self.alarm_subscribe()
@@ -73,23 +74,23 @@ class er_zmq:
         DD_proxy.connect("ipc:///tmp/alarm_subscribe")
         DD_proxy.send_multipart([b'sub', b'monitor_alarm', b'node'])
 
-    def alarm_receiver(self, DDclient):
-        #self.DDclient = DD_client(
-        #    name='ryu',
-        #    dealerurl='tcp://172.17.0.1:5555',
-        #    keyfile='./a-keys.json',
-        #    ER_instance=ER_instance,
-        #    ER_monitor=ER_monitor)
+    def alarm_receiver(self, ER_instance, ER_monitor):
+        DDclient = DD_client(
+            name='ryu',
+            dealerurl='tcp://172.17.0.1:5555',
+            keyfile='./a-keys.json',
+            ER_instance=ER_instance,
+            ER_monitor=ER_monitor)
         #
         # io_loop = tornado.ioloop.IOLoop.current(instance=False)
 
-        io_loop = tornado.ioloop.IOLoop()
-        io_loop.make_current()
-
-        DDclient._IOLoop = tornado.ioloop.IOLoop.current(instance=False)
+        #io_loop = tornado.ioloop.IOLoop()
         #io_loop.make_current()
 
+        #DDclient._IOLoop = tornado.ioloop.IOLoop.current(instance=False)
+        #DDclient._IOLoop.make_current()
 
+        self.log.info("START DDclient")
         DDclient.start()
 
         #DDclient._IOLoop.current(instance=False).start()
