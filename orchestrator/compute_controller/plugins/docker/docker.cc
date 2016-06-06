@@ -79,7 +79,11 @@ bool Docker::startNF(StartNFIn sni)
 			command << " " << control->host_port << " " << control->guest_port;
 		}
 	}
+#else
+	command << " 0";
+#endif
 
+#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	list<string> environment_variables = sni.getEnvironmentVariables();
 	command << " " << environment_variables.size();
 	if(environment_variables.size() != 0)

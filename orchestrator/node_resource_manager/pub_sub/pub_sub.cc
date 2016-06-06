@@ -11,7 +11,7 @@ bool DoubleDeckerClient::init(char *clientName, char *brokerAddress, char *keyPa
 	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "\t DD client name: '%s'",clientName);
 	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "\t DD broker address: '%s'",brokerAddress);
 	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "\t DD key to be used (path): '%s'",keyPath);
-	
+
 	pthread_mutex_init(&connected_mutex, NULL);
 
 	//Start and register a DD client on the brocker
@@ -22,7 +22,7 @@ bool DoubleDeckerClient::init(char *clientName, char *brokerAddress, char *keyPa
 	pthread_create(&thread[0],NULL,loop,NULL);
 
 	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Module inizialized!");
-	
+
 	return true;
 }
 
@@ -54,7 +54,7 @@ void *DoubleDeckerClient::loop(void *param)
 			logger(ORCH_WARNING, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Connection with the Double Decker network has been lost!");
 			free(event);
 			//TODO: what to do in this case?
-		} 
+		}
 		else if (streq("pub",event))
 		{
 			logger(ORCH_WARNING, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Received a 'publication' event. This event is ignored");
@@ -78,7 +78,7 @@ void *DoubleDeckerClient::loop(void *param)
 			pthread_exit(NULL);
 	    }
 	}
-	
+
 	return NULL;
 }
 
@@ -87,7 +87,7 @@ void DoubleDeckerClient::terminate()
 	zsock_send(client, "s", "$TERM");
 	zactor_destroy (&client);
 	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "The connection with the Double Decker is terminated");
-}	
+}
 
 void DoubleDeckerClient::publish(topic_t topic, const char *message)
 {

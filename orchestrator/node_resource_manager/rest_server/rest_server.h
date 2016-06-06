@@ -49,7 +49,8 @@
 #include "../graph/high_level_graph/high_level_output_action_port.h"
 #include "../graph/high_level_graph/high_level_output_action_endpoint.h"
 #include "../graph/vlan_action.h"
-#include "match_parser.h"
+
+#include "../graph/graph-parser/graph_parser.h"
 
 #include "../graph/high_level_graph/nf_port_configuration.h"
 
@@ -94,14 +95,12 @@ private:
 	static int createGraphFromFile(string toBeCreated);
 	static bool parseGraphFromFile(string toBeCreated,highlevel::Graph &graph, bool newGraph);
 
-	static bool parseGraph(Value value, highlevel::Graph &graph, bool newGraph);
-
 	static bool readGraphFromFile(char *nffg_filename);
 
 	static bool checkAuthentication(struct MHD_Connection *connection,const char *token,SQLiteManager *dbm);
 
 public:
-	static bool init(SQLiteManager *dbm, bool cli_auth, char *nffg_filename,int core_mask, char *ports_file_name, string local_ip, bool control, char *control_interface, char *ipsec_certificate);
+	static bool init(SQLiteManager *dbm, bool cli_auth, char *nffg_filename,int core_mask, char *ports_file_name, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate);
 
 	static void terminate();
 

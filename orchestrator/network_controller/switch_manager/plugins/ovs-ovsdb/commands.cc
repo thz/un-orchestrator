@@ -437,7 +437,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 				//insert this port name into port_l
 				string uuid_name = build_port_uuid_name(nfp->port_name, dnumber);
-				port_l[dnumber].push_back(name_on_switch);
+				//port_l[dnumber].push_back(name_on_switch);
 
 				/*fill the map ports*/
 				n_ports_1[nfp->port_name] = rnumber-1;
@@ -1602,22 +1602,25 @@ void commands::cmd_editconfig_NFPorts_delete(DestroyNFportsIn dnpi, int s)
 
 		where.clear();
 
-		list<string>::iterator uu = port_uuid[dnpi.getDpid()].begin();
+		list<string>::iterator port_uuid_on_switch = port_uuid[dnpi.getDpid()].begin();
 
 		/*for each port in the list of the getNetworkFunctionsPorts*/
 		//for(set<string>::iterator p = nfp.begin(); p != nfp.end(); p++){
 		for(list<string>::iterator p = portsToBeRemoved.begin(); p != portsToBeRemoved.end(); p++)
 		{
-			string sss = (*p);
-			uu = port_uuid[dnpi.getDpid()].begin();
+			string port_to_be_removed = (*p);
+
+			port_uuid_on_switch = port_uuid[dnpi.getDpid()].begin();
 			//should be search in port_l, p....if find it take the index and remove it from the set port-uuid[pi]
 			for(list<string>::iterator u = port_l[dnpi.getDpid()].begin(); u != port_l[dnpi.getDpid()].end(); u++){
-				string s = (*u);
-				if(s.compare(sss) == 0){
-					port_uuid[dnpi.getDpid()].remove((*uu));
+				string port_name_on_switch = (*u);
+
+				if(port_name_on_switch.compare(port_to_be_removed) == 0){
+					port_l[dnpi.getDpid()].remove(port_name_on_switch);
+					port_uuid[dnpi.getDpid()].remove((*port_uuid_on_switch));
 					break;
 				}
-				uu++;
+				port_uuid_on_switch++;
 			}
 		}
 

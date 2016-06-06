@@ -60,7 +60,7 @@ protected:
 	*		endpoint -> NF:
 	*			This rule does not appear in LSI-0
 	*/
-	static lowlevel::Graph lowerGraphToLSI0(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0, map<string, unsigned int > &availableEndPoints, bool is_control_in_band = true, bool creating = true);
+	static lowlevel::Graph lowerGraphToLSI0(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0, map<string, unsigned int > &availableEndPoints, bool orchestrator_in_band = true, bool creating = true);
 
 	/**
 	*	@brief: translate an high level graph into a rules to be sent to

@@ -8,10 +8,10 @@
 class ResourceManager
 {
 	/**
-	*	@brief: this class exports resources of the Universal Node, by means of the 
+	*	@brief: this class exports resources of the Universal Node, by means of the
 	**		DoubleDecker client
 	*/
-	
+
 public:
 	/**
 	*	@breif: Publish the domain information written in a specific file

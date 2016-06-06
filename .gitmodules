@@ -1,6 +1,7 @@
-[submodule "virtualizer/virtualizer_library"]
-	path = virtualizer/virtualizer_library
-	url = https://github.com/Ericsson/unify-virtualizer
+[submodule "use-cases/frog/authentication_graph/Controller-Openflow/pox"]
+	path = use-cases/frog/authentication_graph/Controller-Openflow/pox
+	url = https://github.com/noxrepo/pox.git
 [submodule "virtualizer/un_native_nffg_library"]
 	path = virtualizer/un_native_nffg_library
 	url = https://github.com/netgroup-polito/nffg-library.git
+	branch = unify-nffg

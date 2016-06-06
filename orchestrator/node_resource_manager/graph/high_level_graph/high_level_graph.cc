@@ -41,24 +41,6 @@ list<EndPointInterface> Graph::getEndPointsInterface()
 	return endPointsInterface;
 }
 
-bool Graph::addEndPointInterfaceOut(EndPointInterfaceOut endpoint)
-{
-	for(list<EndPointInterfaceOut>::iterator e = endPointsInterfaceOut.begin(); e != endPointsInterfaceOut.end(); e++)
-	{
-		if(*e == endpoint)
-			return false;
-	}
-
-	endPointsInterfaceOut.push_back(endpoint);
-
-	return true;
-}
-
-list<EndPointInterfaceOut> Graph::getEndPointsInterfaceOut()
-{
-	return endPointsInterfaceOut;
-}
-
 bool Graph::addEndPointGre(EndPointGre endpoint)
 {
 	for(list<EndPointGre>::iterator e = endPointsGre.begin(); e != endPointsGre.end(); e++)
@@ -369,11 +351,6 @@ Object Graph::toJSON()
 		end_points.push_back(e->toJSON());
 	}
 
-	for(list<EndPointInterfaceOut>::iterator e = endPointsInterfaceOut.begin(); e != endPointsInterfaceOut.end();e++)
-	{
-		end_points.push_back(e->toJSON());
-	}
-
 	for(list<EndPointGre>::iterator e = endPointsGre.begin(); e != endPointsGre.end();e++)
 	{
 		end_points.push_back(e->toJSON());
@@ -434,7 +411,7 @@ bool Graph::stillExistNF(string nf)
 	}
 
 	networkFunctions.erase(nf);
-	
+
 	list<VNFs>::iterator vnf = vnfs.begin();
 	for(; vnf != vnfs.end(); vnf++)
 	{
@@ -444,9 +421,9 @@ bool Graph::stillExistNF(string nf)
 			break;
 		}
 	}
-	
+
 	assert(vnf != vnfs.end());
-	
+
 	return false;
 }
 

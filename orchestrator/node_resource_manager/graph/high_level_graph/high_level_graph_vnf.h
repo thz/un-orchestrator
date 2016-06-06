@@ -36,7 +36,7 @@ private:
 	/**
 	*	@brief: the groups of the VNF (e.g., example)
 	*/
-	string groups;
+	list<string> groups;
 
 	/**
 	*	@brief: the vnf template of the VNF (e.g., example.json)
@@ -64,14 +64,14 @@ private:
 public:
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	VNFs(string id, string name, string groups, string vnf_template, list<vector<string> > ports, list<pair<string, string> > control_ports, list<string> environment_variables);
+	VNFs(string id, string name, list<string> groups, string vnf_template, list<vector<string> > ports, list<pair<string, string> > control_ports, list<string> environment_variables);
 #else
-	VNFs(string id, string name, string groups, string vnf_template, list<vector<string> > ports);
+	VNFs(string id, string name, list<string> groups, string vnf_template, list<vector<string> > ports);
 #endif
 
 	string getId();
 	string getName();
-	string getGroups();
+	list<string> getGroups();
 	string getVnfTemplate();
 	list<vector<string> > getPorts();
 

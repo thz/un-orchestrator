@@ -18,7 +18,7 @@
 #include "../graph/high_level_graph/high_level_output_action_nf.h"
 #include "../graph/high_level_graph/high_level_output_action_port.h"
 #include "../graph/high_level_graph/high_level_output_action_endpoint.h"
-#include "../rest_server/match_parser.h"
+//#include "../rest_server/match_parser.h"
 
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
@@ -97,17 +97,17 @@ private:
 	/**
 	*	Local IP of the LSI0
 	*/
-	string local_ip;
+	string un_address;
 
 	/**
-	*	Control can be in band (true) or out of band (false)
+	*	Orchestrator can be in band (true) or out of band (false)
 	*/
-	bool is_control_in_band;
+	bool orchestrator_in_band;
 
 	/**
 	*	Control interface of the node
 	*/
-	string control_interface;
+	string un_interface;
 
 	/**
 	*	IPsec certificate
@@ -202,7 +202,7 @@ public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF
 	//(plus other fields)
 
-	GraphManager(int core_mask,string portsFileName,string local_ip,bool control,string control_interface,string ipsec_certificate);
+	GraphManager(int core_mask,string portsFileName,string un_address,bool control,string un_interface,string ipsec_certificate);
 	~GraphManager();
 
 	/**

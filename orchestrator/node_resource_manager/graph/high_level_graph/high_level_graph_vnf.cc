@@ -4,10 +4,10 @@ namespace highlevel
 {
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-VNFs::VNFs(string id, string name, string groups, string vnf_template, list<vector<string> > ports, list<pair<string, string> > control_ports, list<string> environment_variables) :
+VNFs::VNFs(string id, string name, list<string> groups, string vnf_template, list<vector<string> > ports, list<pair<string, string> > control_ports, list<string> environment_variables) :
 	id(id), name(name), groups(groups), vnf_template(vnf_template)
 #else
-VNFs::VNFs(string id, string name, string groups, string vnf_template, list<vector<string> > ports) :
+VNFs::VNFs(string id, string name, list<string> groups, string vnf_template, list<vector<string> > ports) :
 	id(id), name(name), groups(groups), vnf_template(vnf_template)
 #endif
 {
@@ -45,7 +45,7 @@ string VNFs::getName()
 	return name;
 }
 
-string VNFs::getGroups()
+list<string> VNFs::getGroups()
 {
 	return groups;
 }
@@ -67,7 +67,10 @@ void VNFs::print()
 		cout << "\t\tid:" << id << endl;
 		cout << "\t\t\tname: " << name << endl;
 		cout << "\t\t\tvnf_template: " << vnf_template << endl;
-		cout << "\t\t\tgroups: " << groups << endl;
+		cout << "\t\t\tgroups: " << endl << "\t\t{" << endl;
+		for(list<string>::iterator it = groups.begin(); it != groups.end(); it++)
+			cout << "\t\t\t" << *it << endl;
+		cout << "\t\t}" << endl;
 		cout << "\t\t\tports: " << endl << "\t\t{" << endl;
 		for(list<vector<string> >::iterator p = ports.begin(); p != ports.end(); p++)
 		{
@@ -78,6 +81,7 @@ void VNFs::print()
 			if(!(*p)[3].empty())
 				cout << "\t\t\tip: " << (*p)[3] << endl;
 		}
+		cout << "\t\t}" << endl;
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		cout << "\t\t\tunify-control: " << endl << "\t\t{" << endl;
 		for(list<pair<string, string> >::iterator c = control_ports.begin(); c != control_ports.end(); c++)
@@ -93,7 +97,7 @@ void VNFs::print()
 Object VNFs::toJSON()
 {
 	Object vnf;
-	Array portS;
+	Array portS,groups_Array;
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	Array ctrl_ports;
 	Array env_variables;
@@ -102,9 +106,10 @@ Object VNFs::toJSON()
 	vnf[_ID] = id.c_str();
 	vnf[_NAME] = name.c_str();
 	vnf[VNF_TEMPLATE] = vnf_template.c_str();
-	if(strcmp(groups.c_str(), "") != 0)
-		vnf[VNF_GROUPS] = groups;
-
+	for(list<string>::iterator it = groups.begin(); it != groups.end(); it++)
+		groups_Array.push_back((*it).c_str());
+	if(groups.size()!=0)
+		vnf[VNF_GROUPS] = groups_Array;
 	for(list<vector<string> >::iterator p = ports.begin(); p != ports.end(); p++)
 	{
 		Object pp;
@@ -123,8 +128,8 @@ Object VNFs::toJSON()
 	{
 		Object cc;
 
-		cc[HOST_PORT] = (*c).first.c_str();
-		cc[VNF_PORT] = (*c).second.c_str();
+		cc[HOST_PORT] = atoi((*c).first.c_str());
+		cc[VNF_PORT] = atoi((*c).second.c_str());
 
 		ctrl_ports.push_back(cc);
 	}

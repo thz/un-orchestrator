@@ -3,111 +3,17 @@
 This folder contains examples of network functions implemented as DPDK secondary
 processes.
 
-## How to install DPDK
+## How to install the vswitch
 
-DPDK can be installed along with the virtual switch. It is in fact mandatory in case of
-xDPd and OvS-DPDK, which are the two vSwitches supporting VNFs executed as DPDK processes.
+In order to use a DPDK-based VNFs it is necessary to install a proper DPDK enabled virtual Switch,
+currenty the un-node supports xDPd and Open vSwitch, please refer to
+[Install the proper virtual switch](../../orchestrator/README_COMPILE.md#install-the-proper-virtual-switch)
+in order to get instructions about the installation.
 
-### xDPd
+## How to start the vswitch
 
-In order to install xDPd and the DPDK library, you have to follow the steps below.
-
-	$ git clone https://github.com/bisdn/xdpd
-	$ cd xdpd/
-
-	;Install all the libraries required by the README provided in this folder
-	$ bash autogen
-	$ cd build
-	$ ../configure --with-hw-support=gnu-linux-dpdk --with-plugins="node_orchestrator rest"
-	$ make
-	$sudo make install
-
-Now the DPDK library, which is being used by xDPd, must be properly
-configured, which can be done by launching a script that allows you to:
-
-  * build the environment x86_64-native-linuxapp-gcc
-  * Insert IGB UIO module
-  * Insert KNI module
-  * Setup hugepage mappings for non-NUMA systems (1000 should be a
-    reasonable number)
-  * Bind Ethernet device to IGB UIO module (bind all the ethernet
-    interfaces that you want to use)
-
-Let's now launch the DPDK setup script:
-
-	$ cd ../libs/dpdk/tools
-	$ sudo ./setup.sh
-	
-Note that DPDK has to be reconfigured at each reboot of the machine
-
-**WARNING: Currently, xDPd is not compiling on Linux kernels newer than 3.16.0-30.**
-
-### Open vSwitch (OVSDB) with DPDK support
-
-Before installing OvS with DPDK, you must download and compile the DPDK library. At first, download
-the source code from:
-
-	http://dpdk.org/browse/dpdk/snapshot/dpdk-2.1.0.tar.gz
-	
-Then execute the following commands:
-
-    $ tar -xf dpdk-2.1.0.tar.gz
-    $ cd dpdk-2.1.0
-    $ export DPDK_DIR=\`pwd\`
-    ; modify the file `$DPDK_DIR/config/common_linuxapp` so that
-    ; `CONFIG_RTE_BUILD_COMBINE_LIBS=y`
-    ; `CONFIG_RTE_LIBRTE_VHOST=y`
-
-To compile OvS with the DPDK support, execute:
-
-	$ make install T=x86_64-ivshmem-linuxapp-gcc
-	$ export DPDK_BUILD=$DPDK_DIR/x86_64-ivshmem-linuxapp-gcc/
-
-Details on the DPDK ports, namely `user space vhost` and `ivshmem`, are available
-on the [DPDK website](http://dpdk.org/)
-
-Now, download the Open vSwitch source code:
-
-    $ git clone https://github.com/openvswitch/ovs
-
-Then execute the following commands:
-
-    $ cd ovs
-	$ ./boot.sh
-	$ ./configure --with-dpdk=$DPDK_BUILD
-	$ make
-	$ sudo make install
-	
-Now create the ovsbd database:	
-	
-	$ mkdir -p /usr/local/etc/openvswitch
-	$ mkdir -p /usr/local/var/run/openvswitch
-	$ rm /usr/local/etc/openvswitch/conf.db
-	$ sudo ovsdb-tool create /usr/local/etc/openvswitch/conf.db  \
-		/usr/local/share/openvswitch/vswitch.ovsschema
-
-Configure the system (after each reboot of the physical machine):
-
-    $ sudo su
-    ; Set the huge pages of 2MB; 4096 huge pages should be reasonable.
-    $ echo 4096 > /proc/sys/vm/nr_hugepages
-	
-    ; Umount previous hugepages dir
-    $ umount /dev/hugepages
-    $ rm -r /dev/hugepages
-	
-    ; Mount huge pages directory
-    $ mkdir /dev/hugepages
-    $ mount -t hugetlbfs nodev /dev/hugepages
-	
-Set up DPDK (after each reboot of the physical machine):
-
-    $ sudo modprobe uio
-    $ sudo insmod [dpdk-folder]/x86_64-ivshmem-linuxapp-gcc/kmod/igb_uio.ko
-    ; Bind the physical network device to `igb_uio`. The following row
-    ; shows how to bind eth1. Repeat the command for each network interface
-    ; you want to bind.
-    $ [dpdk-folder]/tools/dpdk_nic_bind.py --bind=igb_uio eth1
+Before running the un-node it is necessary to start the virtual switch, please read
+[How to start the proper virtual switch](../../orchestrator/README_RUN.md#how-to-start-the-proper-virtual-switch)
 
 ## How to create your VNFs
 
@@ -119,7 +25,7 @@ Please note that the command line of DPDK processes, in order to be managed thro
 
 	$ sudo ./vnfname -c $coremask -n $memchannels --proc-type=secondary -- p --$port1
 		... --p portN --s $s --l $log
-		
+
 where:
 
   * `$coremask` indicates the cores to be assigned to the application (note that this parameter is required by DPDK)

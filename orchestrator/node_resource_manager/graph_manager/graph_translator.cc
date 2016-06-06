@@ -1,6 +1,6 @@
 #include "graph_translator.h"
 
-lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0, map<string, unsigned int > &availableEndPoints, bool is_control_in_band, bool creating)
+lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0, map<string, unsigned int > &availableEndPoints, bool orchestrator_in_band, bool creating)
 {
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Creating rules for LSI-0");
 
@@ -12,8 +12,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 
 	lowlevel::Graph lsi0Graph;
 
-	//if control in bound install the default rule on LSI-0 otherwise skip this code
-	if(is_control_in_band)
+	//if orchestrator in bound install the default rule on LSI-0 otherwise skip this code
+	if(orchestrator_in_band)
 	{
 		unsigned int i = 0;
 		for(map<string, vector<string> >::iterator it = eps.begin(); it != eps.end(); it++)
