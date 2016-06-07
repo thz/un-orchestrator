@@ -59,7 +59,7 @@ class MonitoringDataHandler(socketserver.BaseRequestHandler):
 
 
 class SecureCli(ClientSafe):
-    def __init__(self, name, dealerurl, customer, keyfile, mpath, mport=55555, qport=54736, ramon_args=None):
+    def __init__(self, name, dealerurl, customer, keyfile, mpath, mport=55555, qport=54736, hello=True, ramon_args=None):
 #        super().__init__(name, dealerurl, customer, keyfile)
         super().__init__(name, dealerurl, keyfile)
 
@@ -85,44 +85,77 @@ class SecureCli(ClientSafe):
         self.mpath = mpath
         self.mport = mport
         self.qport = qport
+        self.hello = hello
         self.ramon_args = ramon_args
         self.last_ramon_data = None
 
     # callback called automatically everytime a point to point is sent at
     # destination to the current client
+    # Expects a Json-Rpc 2.0 like this
+    # {"jsonrpc": "2.0", "method": <method name>, "params": { ... }}
     def on_data(self, src, msg):
 #        print("DATA from %s: %s" % (str(src), str(msg)))
         logging.debug("DATA from %s: %s" % (str(src), str(msg)))
         msg_json = json.loads(msg.decode("utf-8"))
         try:
-            cmd_ = msg_json['method']
-            if 'config' == cmd_:
-                logging.info('NYI command received: ' + cmd_)
-            elif 'pause' == cmd_:
-                logging.info('Command received: ' + cmd_)
-                self.tcp_client.connect(('127.0.0.1', self.qport))
-                self.tcp_client.sendmsg({'pause': True})
-                self.tcp_client.close()
-            elif 'poll_data' == cmd_:
+            meth = msg_json['method']
+            logging.debug('Command received: ' + meth)
+            if 'status' == meth:
+                logging.warning('NYI command received: ' + meth)
+            if meth in ['interface', 'sample_rate', 'estimation_interval', 'meter_interval', 'link_speed', 'alarm_trigger', 'cutoff']:
+                self.send_config(self.get_config_param(msg_json,meth))
+            elif 'exit' == meth:
+                self.send_config({'exit': True})
+            elif 'pause' == meth:
+                self.send_config({'pause': True})
+            elif 'resume' == meth:
+                self.send_config({'resume': True})
+            elif 'poll_data' == meth:
+                # We get this notification from the aggregator
                 if self.last_ramon_data != None:
                     filtered_data = self.filter_ramon_data(self.last_ramon_data)
                     rpc_obj = {"jsonrpc": "2.0", "method": "rate_data", "params": filtered_data}
                     rpc_obj_json = json.dumps(rpc_obj)
-                    self.publish('monitor_aggregate', rpc_obj_json)
+#                    self.publish('monitor_aggregate', rpc_obj_json)
+                    self.publish('measurement', rpc_obj_json)
+            elif 'start' == meth:
+                # We get this notification from the MMP
+                self.start_ramon()
+            else: logging.warning('Unknown command received:' + meth)
         except KeyError as ke:
             logging.warning('Malformed Json-Rpc: ' + str(msg_json))
+
+    def get_config_param(self,msg_json, meth):
+        return {meth: msg_json['params'].get(meth)}        
+
+    def send_config(self,config):
+        self.tcp_client.connect(('127.0.0.1', self.qport))
+        self.tcp_client.sendmsg(config)
+        self.tcp_client.close()
+
+
+    def start_ramon(self):
+        # Register this rate monitor with the aggregator
+        rpc_obj = {"jsonrpc": "2.0", "method": "add_monitor", "params": {"name": self.mname}}
+        rpc_obj_json = json.dumps(rpc_obj)
+#        self.publish('monitor_aggregate', rpc_obj_json)
+        self.publish('measurement', rpc_obj_json)
+        # and start a RAMON instance
+        Popen(["xterm", "-geometry", "80x45+0+0", "-wf", "-T", "%s_ramon"%self.mname,
+               "-e", self.mpath + " -b %s %s ; read"%(str(self.mport), ' '.join(self.ramon_args))])
+
 
     # callback called upon registration of the client with its broker
     def on_reg(self):
 #        print("The client is now connected")
         logging.info("The client is now connected")
-        # Register this rate monitor with the aggregator
-        rpc_obj = {"jsonrpc": "2.0", "method": "add_monitor", "params": {"name": self.mname}}
-        rpc_obj_json = json.dumps(rpc_obj)
-        self.publish('monitor_aggregate', rpc_obj_json)
-        # and start a RAMON instance
-        Popen(["xterm", "-geometry", "80x45+0+0", "-wf", "-T", "%s_ramon"%self.mname,
-               "-e", self.mpath + " -b %s %s ; read"%(str(self.mport), ' '.join(self.ramon_args))])
+        # Say hello to the MMP
+        if self.hello:
+            rpc_obj = {"jsonrpc": "2.0", "method": "hello", "params": {"name": self.mname, "type": "ratemon"}}
+            rpc_obj_json = json.dumps(rpc_obj)
+            self.publish('unify:mmp', rpc_obj_json)
+        else:
+            self.start_ramon()
 
     # callback called when the client detects that the heartbeating with
     # its broker has failed, it can happen if the broker is terminated/crash
@@ -150,16 +183,23 @@ class SecureCli(ClientSafe):
 
     def shutdown(self):
         # Un-register this monitor with the aggregator
-        logging.info("Shutting down")
+        logging.info("\nShutting down")
         rpc_obj = {"jsonrpc": "2.0", "method": "remove_monitor", "params": {"name": self.mname}}
         rpc_obj_json = json.dumps(rpc_obj)
-        self.publish('monitor_aggregate', rpc_obj_json)
+#        self.publish('monitor_aggregate', rpc_obj_json)
+        self.publish('measurement', rpc_obj_json)
         #
+        logging.debug("shutdown(): before 'self.serverThread.join()'")
         self.serverThread.join()
+        logging.debug("shutdown(): before 'self.handlersThread.join()'")
         self.handlersThread.join()
+        logging.debug("shutdown(): before 'self.tcp_server.shutdown()'")
         self.tcp_server.shutdown()
+        logging.debug("shutdown(): before 'self.tcp_server.server_close()'")
         self.tcp_server.server_close()
+        logging.debug("shutdown(): before 'super.shutdown()'")
         super().shutdown()
+        logging.debug("shutdown(): before 'sys.exit()'")
         sys.exit()              # [PD] FIXME: We never get here. Why?
 
     def results_sender(self):
@@ -167,7 +207,8 @@ class SecureCli(ClientSafe):
 #            pdb.set_trace()
             rate_data = self.handlers.recv().decode('utf-8')
             results = json.loads(rate_data)
-            logging.info(results)
+            print(".",end="",flush=True)
+            logging.debug(results)
             if 'exited' in results:
                 self.shutdown()
             elif 'initialized' in results:
@@ -179,7 +220,8 @@ class SecureCli(ClientSafe):
                     filtered_data = self.filter_ramon_data(results)
                     rpc_obj = {"jsonrpc": "2.0", "method": "rate_data", "params": filtered_data}
                     rpc_obj_json = json.dumps(rpc_obj)
-                    self.publish('monitor_aggregate', rpc_obj_json)
+#                    self.publish('monitor_aggregate', rpc_obj_json)
+                    self.publish('measurement', rpc_obj_json)
                 else:
                     self.last_ramon_data = results
             self.handlers.send(b'')
@@ -242,6 +284,11 @@ if __name__ == '__main__':
         nargs='?',
         default='')
     parser.add_argument(
+        '-n',
+        "--no_hello",
+        help='Do not send an hello to the MMP at startup (used when debugging). (Default: %(default)s)',
+        action='store_true')
+    parser.add_argument(
         '-p',
         "--ramon_port",
         help='Port for receiving rate monitor data (Default: %(default)s)',
@@ -283,6 +330,7 @@ if __name__ == '__main__':
                           mpath=args.ramon_path,
                           mport=args.ramon_port,
                           qport=args.config_port,
+                          hello= not args.no_hello,
                           ramon_args=args.ramon_args)
 
     logging.info("Starting DoubleDecker example client")
