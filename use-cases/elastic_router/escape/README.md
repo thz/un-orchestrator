@@ -6,3 +6,10 @@ This folder includes the current escape code and the goal is:
 - Orchestrate the Elastic router (`er-sg.nffg`) to the UN domain
 - Receive NFFG updates via the Cf-Or interface of Escape 
 - Orchestrate these NFFG updates to the UN domain
+
+Build the container using:
+`docker build -t escape .`
+
+Run the container using:
+`docker run --net=host escape`
+
