@@ -350,7 +350,23 @@ def add_ovs_vnf(nffg_xml, nffg_id, ovs_id, name, vnftype, numports):
     vnf.metadata.add(MetadataMetadata(key='variable:OVS_DPID', value='99{0}'.format(str(ovs_id).zfill(14))))
     vnf.metadata.add(MetadataMetadata(key='variable:CONTROLLER', value='tcp:10.0.10.100:6633'))
 
-    vnf.metadata.add(MetadataMetadata(key='measure', value='test measure {0}'.format(name)))
+    measurestring = """ measurements {{
+    m1 = cpu(vnf = {0});
+    m2 = mem(vnf = {0});
+    }}
+    zones {{
+    z1 = (AVG(val = m1, max_age = "5 minute") &lt; 0.5);
+    z2 = (AVG(val = m2, max_age = "5 minute") &gt; 0.5);
+    }}
+    actions {{z1->z2 = Publish(topic = "alarms", message = "z1 to z2"); Notify(target = "alarms", message = "z1 to z2");
+    z2->z1 = Publish(topic = "alarms", message = "z2 to z");
+    ->z1 = Publish(topic = "alarms", message = "entered z1");
+    z1-> = Publish(topic = "alarms", message = "left z1");
+    z1 = Publish(topic = "alarms", message = "in z1");
+    z2 = Publish(topic = "alarms", message = "in z2");
+    }}""".format(nffg_id)
+
+    vnf.metadata.add(MetadataMetadata(key='measure', value=measurestring))
 
     vnf.set_operation(operation="create",  recursive=False)
     un.NF_instances.add(vnf)
