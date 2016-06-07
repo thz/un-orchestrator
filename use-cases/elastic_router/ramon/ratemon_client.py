@@ -59,7 +59,8 @@ class MonitoringDataHandler(socketserver.BaseRequestHandler):
 
 
 class SecureCli(ClientSafe):
-    def __init__(self, name, dealerurl, customer, keyfile, mpath, mport=55555, qport=54736, hello=True, ramon_args=None):
+#    def __init__(self, name, dealerurl, customer, keyfile, mpath, mport=55555, qport=54736, hello=True, ramon_args=None):
+    def __init__(self, name, dealerurl, keyfile, mpath, mport=55555, qport=54736, hello=True, ramon_args=None):
 #        super().__init__(name, dealerurl, customer, keyfile)
         super().__init__(name, dealerurl, keyfile)
 
@@ -116,7 +117,6 @@ class SecureCli(ClientSafe):
                     filtered_data = self.filter_ramon_data(self.last_ramon_data)
                     rpc_obj = {"jsonrpc": "2.0", "method": "rate_data", "params": filtered_data}
                     rpc_obj_json = json.dumps(rpc_obj)
-#                    self.publish('monitor_aggregate', rpc_obj_json)
                     self.publish('measurement', rpc_obj_json)
             elif 'start' == meth:
                 # We get this notification from the MMP
@@ -138,7 +138,6 @@ class SecureCli(ClientSafe):
         # Register this rate monitor with the aggregator
         rpc_obj = {"jsonrpc": "2.0", "method": "add_monitor", "params": {"name": self.mname}}
         rpc_obj_json = json.dumps(rpc_obj)
-#        self.publish('monitor_aggregate', rpc_obj_json)
         self.publish('measurement', rpc_obj_json)
         # and start a RAMON instance
         Popen(["xterm", "-geometry", "80x45+0+0", "-wf", "-T", "%s_ramon"%self.mname,
@@ -177,7 +176,9 @@ class SecureCli(ClientSafe):
 
     def start(self):
         logging.info('Starting to serve requests')
+        self.serverThread.daemon = True # [PD] 2016-06-07, see if this helps on shutdown ...
         self.serverThread.start()
+        self.handlersThread.daemon = True # [PD] 2016-06-07, see if this helps on shutdown ...
         self.handlersThread.start()
         super().start()
 
@@ -186,7 +187,6 @@ class SecureCli(ClientSafe):
         logging.info("\nShutting down")
         rpc_obj = {"jsonrpc": "2.0", "method": "remove_monitor", "params": {"name": self.mname}}
         rpc_obj_json = json.dumps(rpc_obj)
-#        self.publish('monitor_aggregate', rpc_obj_json)
         self.publish('measurement', rpc_obj_json)
         #
         logging.debug("shutdown(): before 'self.serverThread.join()'")
@@ -199,8 +199,6 @@ class SecureCli(ClientSafe):
         self.tcp_server.server_close()
         logging.debug("shutdown(): before 'super.shutdown()'")
         super().shutdown()
-        logging.debug("shutdown(): before 'sys.exit()'")
-        sys.exit()              # [PD] FIXME: We never get here. Why?
 
     def results_sender(self):
         while True:
@@ -220,7 +218,6 @@ class SecureCli(ClientSafe):
                     filtered_data = self.filter_ramon_data(results)
                     rpc_obj = {"jsonrpc": "2.0", "method": "rate_data", "params": filtered_data}
                     rpc_obj_json = json.dumps(rpc_obj)
-#                    self.publish('monitor_aggregate', rpc_obj_json)
                     self.publish('measurement', rpc_obj_json)
                 else:
                     self.last_ramon_data = results
@@ -258,7 +255,7 @@ class SecureCli(ClientSafe):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generic message client")
     parser.add_argument('name', help="Identity of this client")
-    parser.add_argument( 'customer', help="Name of the customer to get the keys (i.e. 'a' for the customer-a.json file)")
+#    parser.add_argument( 'customer', help="Name of the customer to get the keys (i.e. 'a' for the customer-a.json file)")
     parser.add_argument(
         '-d',
         "--dealer",
@@ -325,7 +322,7 @@ if __name__ == '__main__':
     logging.info("Safe client")
     genclient = SecureCli(name=args.name,
                           dealerurl=args.dealer,
-                          customer=args.customer,
+#                          customer=args.customer,
                           keyfile=args.keyfile,
                           mpath=args.ramon_path,
                           mport=args.ramon_port,
