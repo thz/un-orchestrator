@@ -13,6 +13,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install libffi-dev
 RUN pip3 install pynacl
 RUN pip3 install jsonrpcserver
 RUN pip3 install jsonrpcclient
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install curl
 
 # Grab cadvisor from the staging directory.
 ADD cadvisor /usr/bin/cadvisor

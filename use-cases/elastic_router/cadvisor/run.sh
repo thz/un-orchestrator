@@ -12,4 +12,11 @@ then ckey=a
 else ckey=$KEY
 fi
 /usr/bin/cadvisor -port=$cport -logtostderr &
+while : ; do
+  if curl --fail -X GET "127.0.0.1:$cport"; then
+      break;
+  fi
+  echo "."
+  sleep 1;
+done
 python3 main.py $cname /keys/$ckey -p $cport;
