@@ -131,7 +131,7 @@ class ElasticRouterMonitor:
     def scaling_finish(self):
         # scaled out DPs are detected (intermediate configuration)
         logging.info('scaling_intermediate_finish')
-        # TODO set openflow table of new DPs
+        # set openflow table of new DPs
         # fill of tables at DP creation during scaling
         # and fill tables at DP detection
 

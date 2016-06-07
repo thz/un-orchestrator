@@ -618,7 +618,6 @@ bool RestServer::parsePutBody(struct connection_info_struct &con_info,highlevel:
 	return GraphParser::parseGraph(value, graph, newGraph, gm);
 }
 
-
 int RestServer::doGet(struct MHD_Connection *connection, const char *url)
 {
 	struct MHD_Response *response;

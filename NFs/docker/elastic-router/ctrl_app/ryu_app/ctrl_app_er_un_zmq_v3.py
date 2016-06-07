@@ -27,14 +27,13 @@ import time
 from json_er import import_json_file
 from er_utils import *
 from er_monitor_zmq import *
-from er_zmq import *
+from er_ddclient import er_ddclient
 import er_rest_api
+
 
 # this version must use xml based nffg
 os.environ["NFFG_FORMAT"] = "xml"
 import er_nffg
-
-
 
 
 class ElasticRouter(app_manager.RyuApp):
@@ -74,11 +73,9 @@ class ElasticRouter(app_manager.RyuApp):
         # get config file with routing table
         self.config = import_json_file(self.CONFIG_FILE)
 
-
         self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
         self.parse_nffg(self.nffg)
 
-        #self.scaled_nffg = None
         self.VNFs_to_be_deleted = []
 
         self.logger.debug('DP instances: {0}'.format(self.DP_instances))
@@ -89,9 +86,12 @@ class ElasticRouter(app_manager.RyuApp):
         # monitor function to trigger nffg change
         self.monitor_thread = hub.spawn(self._monitor)
 
-        self.zmq_ = er_zmq(self.monitorApp, self)
+        # start DD client
+        self.zmq_ = er_ddclient(self.monitorApp, self)
 
+        # start rest api to easily scale in/out
         self.rest_api_ = er_rest_api.rest_api.start_rest_server(self.monitorApp, self)
+
 
     def parse_nffg(self, nffg):
         # check nffg and parse the ovs instances deployed
@@ -318,6 +318,9 @@ class ElasticRouter(app_manager.RyuApp):
         # fix priorities of new flow entries to SAPs
         # TODO only incoming flows matter
         self.nffg = er_nffg.add_duplicate_flows_with_priority(self.nffg, old_priority=9, new_priority=11)
+        file = open('ER_scale_priorities1.xml', 'w')
+        file.write(self.nffg)
+        file.close()
         er_nffg.send_nffg(self.REST_Cf_Or, self.nffg)
         # need some time here to install flows, otherwise packet loss
         hub.sleep(5)
@@ -339,6 +342,10 @@ class ElasticRouter(app_manager.RyuApp):
             VNF_id = self.DP_instances[del_VNF].id
             self.nffg = er_nffg.delete_VNF(self.nffg, VNF_id)
 
+        file = open('ER_scale_priorities2.xml', 'w')
+        file.write(self.nffg)
+        file.close()
+
         self.nffg = er_nffg.send_nffg(self.REST_Cf_Or, self.nffg)
         # need some time here to delete all flows, otherwise packet loss
         #hub.sleep(5)
@@ -352,7 +359,7 @@ class ElasticRouter(app_manager.RyuApp):
 
         # fix priorities of new flow entries to SAPs
         new_nffg = er_nffg.add_duplicate_flows_with_priority(self.nffg, old_priority=9, new_priority=10)
-        file = open('ER_scale_priorities.xml', 'w')
+        file = open('ER_scale_priorities3.xml', 'w')
         file.write(new_nffg)
         file.close()
         new_nffg = er_nffg.send_nffg(self.REST_Cf_Or, new_nffg)

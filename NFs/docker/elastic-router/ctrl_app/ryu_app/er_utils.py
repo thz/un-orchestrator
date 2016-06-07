@@ -317,7 +317,7 @@ class DP:
                 return port
 
     def add_port(self,  ifname, port_type=None, linked_port=None ):
-        port_id = len(self.ports)+1
+        port_id = len(self.ports) + 2 #because DP mgmt port and control port is not added here, only the data ports
         new_port = DPPort(ifname, port_id, DP_parent=self, port_type=port_type, linked_port=linked_port)
         self.ports.append(new_port)
         return new_port

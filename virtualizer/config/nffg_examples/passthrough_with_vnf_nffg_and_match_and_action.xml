@@ -70,13 +70,11 @@
 							<id>1</id>
 							<name>internal port</name>
 							<port-type>port-abstract</port-type>
-							<capability/>
 						</port>
 						<port>
 							<id>2</id>
 							<name>external port</name>
 							<port-type>port-abstract</port-type>
-							<capability/>
 						</port>
 					</ports>
 				</node>

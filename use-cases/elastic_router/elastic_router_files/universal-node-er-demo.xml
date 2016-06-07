@@ -19,16 +19,16 @@
 
 	<ports>
 		<port name="veth0un" type="ethernet" side="edge">
-			<virtualized as="intern_link1" port-type="port-sap" sap="sap1"/>
+			<virtualized as="virtual-sap1" port-type="port-sap" sap="sap1"/>
 		</port>
 		<port name="veth1un" type="ethernet" side="edge">
-			<virtualized as="intern_link2" port-type="port-sap" sap="sap2"/>
+			<virtualized as="virtual-sap2" port-type="port-sap" sap="sap2"/>
 		</port>
 		<port name="veth2un" type="ethernet" side="edge">
-			<virtualized as="intern_link3" port-type="port-sap" sap="sap3"/>
+			<virtualized as="virtual-sap3" port-type="port-sap" sap="sap3"/>
 		</port>
 		<port name="veth3un" type="ethernet" side="edge">
-			<virtualized as="intern_link4" port-type="port-sap" sap="sap4"/>
+			<virtualized as="virtual-sap4" port-type="port-sap" sap="sap4"/>
 		</port>
 		
 		<!-- 

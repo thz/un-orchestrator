@@ -269,7 +269,6 @@ public:
 	/**
 	*	@brief: Return the endpointsInterface of the graph
 	*/
-	//XXX: this functions is not used. 
 	list<EndPointInterface> getEndPointsInterface();
 
 	/**

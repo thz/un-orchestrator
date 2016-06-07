@@ -29,28 +29,28 @@ ADD ryu_ddclient.py ryu_ddclient.py
 
 # setup DoubleDecker
 RUN apt-get update
-RUN apt-get install -yq python3 python3-zmq python3-pip libffi-dev libsodium-dev 
-RUN pip3 install jsonrpcserver
-RUN pip3 install PyNaCl
+#RUN apt-get install -yq python3 python3-zmq python3-pip libffi-dev libsodium-dev 
+RUN apt-get install -yq gcc python-setuptools python-dev python-zmq python-pip libffi-dev libsodium-dev 
+RUN pip install jsonrpcserver
+RUN pip install PyNaCl
+RUN pip install gipc
+RUN pip install future
 RUN wget https://github.com/acreo/DoubleDecker-py/archive/master.tar.gz -O dd.tar.gz
 RUN tar xzf dd.tar.gz && rm dd.tar.gz
 WORKDIR /root/DoubleDecker-py-master/
-RUN python3 setup.py build
-RUN python3 setup.py install
+RUN python setup.py build
+RUN python setup.py install
 
-# generate key files
-#WORKDIR /root/DoubleDecker-py-master/doubledecker
-#RUN python3 -c 'from generateKeys import *; generate_keys("a")'
 
 WORKDIR /root/
 
-# copy key file
+# copy key file (should be same key file as used on UN server)
 COPY ./a-keys.json ./a-keys.json
 
 # setup ryu files
 COPY ./ryu_app ./ryu_app
 
-ADD start_DD.sh start.sh
+ADD start_DD2.sh start.sh
 RUN chmod +x start.sh
 
 CMD ./start.sh
