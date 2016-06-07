@@ -24,3 +24,6 @@
 	url = https://github.com/noxrepo/pox.git
 
 
+[submodule "use-cases/elastic_router/ramon/ramon_src"]
+	path = use-cases/elastic_router/ramon/ramon_src
+	url = https://github.com/nigsics/ramon
