@@ -9,4 +9,4 @@ USER DOCKER
 WORKDIR /escape-shared  
 RUN ./install-dep.sh
 
-CMD ./escape.py -s er-topo_v1.nffg
+CMD ./escape.py -s er-sg.nffg
