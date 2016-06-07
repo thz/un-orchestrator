@@ -1,0 +1,126 @@
+{
+  "parameters": {
+    "id": "ER-SG",
+    "name": "Topology",
+    "version": "1.0"
+  },
+  "node_nfs":[
+	{
+	  "id":"er",
+	  "name":"er",
+	  "ports":[
+		{
+			"id":1
+		},
+		{
+			"id":2
+		},
+		{
+			"id":3
+		},
+		{
+			"id":4
+		}
+	  ],
+	  "functional_type":"router"
+	}
+  ],
+  "node_saps": [
+    {
+      "id": "SG_SAP1",
+      "name": "SG_SAP1",
+      "ports": [
+        {
+          "id": 1
+        }
+      ]
+    },
+    {
+      "id": "SG_SAP2",
+      "name": "SG_SAP2",
+      "ports": [
+        {
+          "id": 1
+        }
+      ]
+    },
+    {
+      "id": "SG_SAP3",
+      "name": "SG_SAP3",
+      "ports": [
+        {
+          "id": 1
+        }
+      ]
+    },
+    {
+      "id": "SG_SAP4",
+      "name": "SG_SAP4",
+      "ports": [
+        {
+          "id": 1
+        }
+      ]
+    }
+  ],
+  "edge_sg_nexthops": [
+    {
+      "id": "hop1",
+      "src_node": "SG_SAP1",
+      "src_port": 1,
+      "dst_node": "er",
+      "dst_port": 1
+      
+    },
+    {
+      "id": "hop11",
+      "src_node": "er",
+      "src_port": 1,
+      "dst_node": "SG_SAP1",
+      "dst_port": 1
+    },
+    {
+      "id": "hop2",
+      "src_node": "SG_SAP2",
+      "src_port": 1,
+      "dst_node": "er",
+      "dst_port": 2
+    },
+    {
+      "id": "hop22",
+      "src_node": "er",
+      "src_port": 2,
+      "dst_node": "SG_SAP2",
+      "dst_port": 1
+    },
+    {
+      "id": "hop3",
+      "src_node": "SG_SAP3",
+      "src_port": 1,
+      "dst_node": "er",
+      "dst_port": 3
+    },
+    {
+      "id": "hop33",
+      "src_node": "er",
+      "src_port": 3,
+      "dst_node": "SG_SAP3",
+      "dst_port": 1
+    },
+    {
+      "id": "hop4",
+      "src_node": "SG_SAP4",
+      "src_port": 1,
+      "dst_node": "er",
+      "dst_port": 4
+    },
+    {
+      "id": "hop44",
+      "src_node": "er",
+      "src_port": 4,
+      "dst_node": "SG_SAP4",
+      "dst_port": 4
+    }
+
+  ]
+}
