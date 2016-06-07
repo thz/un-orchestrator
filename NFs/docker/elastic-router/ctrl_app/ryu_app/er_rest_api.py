@@ -3,6 +3,7 @@ from flask_restful import Resource, Api
 
 from eventlet import wsgi
 import eventlet
+import time
 
 from ryu.lib import hub
 
@@ -32,18 +33,30 @@ class er_rest_api():
         return 'test'
 
     def scale_in(self):
+        start_time = time.time()
         scaling_ports = self.er_monitor.start_scale_in_default()
         self.log.debug('start scale in')
         if len(scaling_ports) > 0:
             self.ER_app.VNFs_to_be_deleted = self.ER_app.scale(scaling_ports, 'in')
-        return 'scaling in finished'
+            self.er_monitor.scaling_lock.acquire()
+            self.er_monitor.scaling_lock.release()
+        else:
+            return 'scaling in not possible'
+        scaling_time = time.time() - start_time
+        return 'scaling in finished ({0} seconds)'.format(round(scaling_time,2))
 
     def scale_out(self):
+        start_time = time.time()
         scaling_ports = self.er_monitor.start_scale_out_default()
         self.log.debug('start scale out')
         if len(scaling_ports) > 0:
             self.ER_app.VNFs_to_be_deleted = self.ER_app.scale(scaling_ports, 'out')
-        return 'scaling out finished'
+            self.er_monitor.scaling_lock.acquire()
+            self.er_monitor.scaling_lock.release()
+        else:
+            return 'scaling out not possible'
+        scaling_time = time.time() - start_time
+        return 'scaling out finished ({0} seconds)'.format(round(scaling_time, 2))
 
     def ping(self):
         return 'pong'

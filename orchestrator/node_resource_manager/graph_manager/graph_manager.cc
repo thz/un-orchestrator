@@ -572,7 +572,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 
 		if(retVal == NFManager_NO_NF)
 		{
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "NF \"%s\" cannot be retrieved",nf->first.c_str());
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "NF \"%s\" cannot be retrieved",nf->first.c_str());
 			return false;
 		}
 		else if(retVal == NFManager_SERVER_ERROR)
@@ -861,8 +861,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tNF %s:",it->c_str());
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
 		if(network_functions_control_configuration.count(*it) != 0)
 		{
 			list<port_mapping_t > nfs_control_configuration = network_functions_control_configuration[*it];
@@ -885,8 +883,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\t\t\t%s",ev->c_str());
 			}
 		}
-
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 #endif
 
 		map<string,unsigned int> nfs_ports = lsi->getNetworkFunctionsPorts(*it);
@@ -1080,9 +1076,15 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		MonitoringController *monitoringController = new MonitoringController();
 		graphInfoTenantLSI.setMonitoringController(monitoringController);
 
+		//Prepare the info related to the physical ports
+		list< pair<string, string> > portsMapping;
+		list<highlevel::EndPointInterface> epsInterface = graph->getEndPointsInterface();
+		for(list<highlevel::EndPointInterface>::iterator interface = epsInterface.begin(); interface != epsInterface.end(); interface++)
+			portsMapping.push_back(make_pair(interface->getName(),interface->getInterface()));
+
 		//XXX super ad hoc code that makes assumptions on how the compute controller creates the names 
 		list< pair<string, string> > vnfsMapping;
-		list<map<unsigned int, string> > portsMapping;
+		list<map<unsigned int, string> > vnfsPortsMapping;
 		
 		list<highlevel::VNFs> vnfs = graph->getVNFs();
 		for(list<highlevel::VNFs>::iterator vnf = vnfs.begin(); vnf != vnfs.end(); vnf++)
@@ -1090,10 +1092,10 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			stringstream name;
 			name << dpid << "_" << vnf->getName();
 			vnfsMapping.push_back(make_pair(vnf->getId(),name.str()));
-			portsMapping.push_back(lsi->getNetworkFunctionsPortsNameOnSwitchMap(vnf->getName()));
+			vnfsPortsMapping.push_back(lsi->getNetworkFunctionsPortsNameOnSwitchMap(vnf->getName()));
 		}
 
-		monitoringController->startMonitoring(graph->getMeasureString(),vnfsMapping,portsMapping);
+		monitoringController->startMonitoring(graph->getMeasureString(),portsMapping,vnfsMapping,vnfsPortsMapping);
 #endif
 	} catch (SwitchManagerException e)
 	{
@@ -1343,6 +1345,13 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	for(map<string, vector<string> >::iterator mep = nep.begin(); mep != nep.end(); mep++)
 	{
 		string tmp_ep = mep->first;
+	}
+
+	//Update the "interface" endpoints
+	list<highlevel::EndPointInterface> newEpsInterface = newPiece->getEndPointsInterface();
+	for(list<highlevel::EndPointInterface>::iterator interface = newEpsInterface.begin(); interface != newEpsInterface.end(); interface++)
+	{
+		graph->addEndPointInterface(*interface);
 	}
 
 #ifdef ENABLE_UNIFY_MONITORING_CONTROLLER
@@ -1620,9 +1629,15 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 
 		MonitoringController *monitoringController = (tenantLSIs.find(graphID))->second.getMonitoringController();
 
+		//Prepare the info related to the physical ports
+		list< pair<string, string> > portsMapping;
+		list<highlevel::EndPointInterface> epsInterface = graph->getEndPointsInterface();
+		for(list<highlevel::EndPointInterface>::iterator interface = epsInterface.begin(); interface != epsInterface.end(); interface++)
+			portsMapping.push_back(make_pair(interface->getName(),interface->getInterface()));
+
 		//XXX super ad hoc code that makes assumptions on how the compute controller creates the names 
 		list< pair<string, string> > vnfsMapping;
-		list<map<unsigned int, string> > portsMapping;
+		list<map<unsigned int, string> > vnfsPortsMapping;
 		
 		list<highlevel::VNFs> vnfs = graph->getVNFs();
 		for(list<highlevel::VNFs>::iterator vnf = vnfs.begin(); vnf != vnfs.end(); vnf++)
@@ -1631,10 +1646,10 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 			name << dpid << "_" << vnf->getName();
 			vnfsMapping.push_back(make_pair(vnf->getId(),name.str()));
 			
-			portsMapping.push_back(lsi->getNetworkFunctionsPortsNameOnSwitchMap(vnf->getName()));
+			vnfsPortsMapping.push_back(lsi->getNetworkFunctionsPortsNameOnSwitchMap(vnf->getName()));
 		}
 
-		monitoringController->startMonitoring(graph->getMeasureString(),vnfsMapping,portsMapping);
+		monitoringController->startMonitoring(graph->getMeasureString(),portsMapping,vnfsMapping,vnfsPortsMapping);
 #endif
 
 	} catch (SwitchManagerException e)

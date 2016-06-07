@@ -25,7 +25,6 @@ __license__ = """
   GNU Lesser General Public License along with this program.  If not,
   see <http://www.gnu.org/licenses/>.
 """
-# Some parts, Copyright © 2016 SICS Swedish ICT AB
 
 import argparse
 import logging
@@ -35,12 +34,7 @@ import threading
 import zmq
 import time
 import json
-#import os
-import sys
 from doubledecker.clientSafe import ClientSafe
-from math import sqrt
-from subprocess import Popen
-import pdb
 
 # Inherit ClientSafe and implement the abstract classes
 # ClientSafe does encryption and authentication using ECC (libsodium/nacl)
@@ -59,9 +53,8 @@ class MonitoringDataHandler(socketserver.BaseRequestHandler):
 
 
 class SecureCli(ClientSafe):
-    def __init__(self, name, dealerurl, customer, keyfile, mpath, mport=55555, qport=54736, hello=True, ramon_args=None):
-#        super().__init__(name, dealerurl, customer, keyfile)
-        super().__init__(name, dealerurl, keyfile)
+    def __init__(self, name, dealerurl, customer, keyfile):
+        super().__init__(name, dealerurl, customer, keyfile)
 
         self.b = True
 
@@ -72,8 +65,7 @@ class SecureCli(ClientSafe):
         self.handlersThread = threading.Thread(
             target=self.results_sender)
 
-        socketserver.ThreadingTCPServer.allow_reuse_address = True
-        self.tcp_server = socketserver.ThreadingTCPServer(('127.0.0.1', mport),
+        self.tcp_server = socketserver.ThreadingTCPServer(('127.0.0.1', 9999),
                                              MonitoringDataHandler)
         self.tcp_server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.tcp_server.daemon = True
@@ -161,22 +153,19 @@ class SecureCli(ClientSafe):
     # its broker has failed, it can happen if the broker is terminated/crash
     # or if the link is broken
     def on_discon(self):
-#        print("The client got disconnected")
-        logging.info("The client got disconnected")
+        print("The client got disconnected")
 
     # callback called when the client receives an error message
     def on_error(self, code, msg):
-#        print("ERROR n#%d : %s" % (code, msg))
-        logging.error("ERROR n#%d : %s" % (code, msg))
+        print("ERROR n#%d : %s" % (code, msg))
 
     # callback called when the client receives a message on a topic he
     # subscribed to previously
     def on_pub(self, src, topic, msg):
-#        print("PUB %s from %s: %s" % (str(topic), str(src), str(msg)))
-        logging.info("PUB %s from %s: %s" % (str(topic), str(src), str(msg)))
+        print("PUB %s from %s: %s" % (str(topic), str(src), str(msg)))
 
     def start(self):
-        logging.info('Starting to serve requests')
+        logging.info('Sarting to serve requests')
         self.serverThread.start()
         self.handlersThread.start()
         super().start()
@@ -255,6 +244,7 @@ class SecureCli(ClientSafe):
             # self.sendmsg('agg', results)
             self.handlers.send(b'')
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generic message client")
     parser.add_argument('name', help="Identity of this client")
@@ -262,25 +252,25 @@ if __name__ == '__main__':
     parser.add_argument(
         '-d',
         "--dealer",
-        help='URL to connect DEALER socket to (Default: %(default)s)',
+        help='URL to connect DEALER socket to, "tcp://1.2.3.4:5555"',
         nargs='?',
         default='tcp://127.0.0.1:5555')
     parser.add_argument(
         '-f',
         "--logfile",
-        help='File to write logs to (Default: %(default)s)',
+        help='File to write logs to',
         nargs='?',
         default=None)
     parser.add_argument(
         '-l',
         "--loglevel",
-        help='Set loglevel (DEBUG, INFO, WARNING, ERROR, CRITICAL) (Default: %(default)s)',
+        help='Set loglevel (DEBUG, INFO, WARNING, ERROR, CRITICAL)',
         nargs='?',
         default="INFO")
     parser.add_argument(
         '-k',
         "--keyfile",
-        help='File containing the encryption/authentication keys',
+        help='File containing the encryption/authentication keys)',
         nargs='?',
         default='')
     parser.add_argument(

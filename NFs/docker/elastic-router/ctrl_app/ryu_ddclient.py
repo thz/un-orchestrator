@@ -40,7 +40,8 @@ Request.notification_errors = True
 
 class SecureCli(ClientSafe):
     def __init__(self, name, dealerurl, customer, keyfile):
-        super().__init__(name, dealerurl, customer, keyfile)
+        super().__init__(name, dealerurl, keyfile)
+        #super().__init__(name, dealerurl, customer, keyfile)
 
         self.subscriptions = []
         self.registered = False

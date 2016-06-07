@@ -7,6 +7,7 @@ import logging
 #Set the logger
 #logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
+import time
 
 CTX = zmq.Context(1)
 
@@ -49,7 +50,7 @@ class er_zmq:
         DD_proxy = zmq.Socket(CTX, zmq.REQ)
         DD_proxy.connect("ipc:///tmp/alarm_subscribe")
         #DD_proxy.send_multipart([b'sub', b'alarms', b'all'])
-        DD_proxy.send_multipart([b'sub', b'alarms', b'node'])
+        DD_proxy.send_multipart([b'sub', b'monitor_alarm', b'node'])
 
     def alarm_receiver(self):
         self.log.debug("Waiting for ALARM")
@@ -58,17 +59,27 @@ class er_zmq:
 
         while True:
             msg = DD_proxy.recv_multipart()
-            self.log.debug("Received ALARM: {0}".format(msg))
+            self.log.info("Received ALARM: {0}".format(msg))
+            start_time = time.time()
 
             scaling_ports = []
             if 'scale_in' in msg[2]:
                 scaling_ports = self.er_monitor.start_scale_in_default()
-                self.log.debug('start scale in')
+                self.log.info('start scale in')
                 if len(scaling_ports) > 0:
                     self.ER_app.VNFs_to_be_deleted = self.ER_app.scale(scaling_ports,'in')
+                    # wait unit scaling lock is released
+                    self.er_monitor.scaling_lock.acquire()
+                    self.er_monitor.scaling_lock.release()
 
             elif 'scale_out' in msg[2]:
                 scaling_ports = self.er_monitor.start_scale_out_default()
-                self.log.debug('start scale out')
+                self.log.info('start scale out')
                 if len(scaling_ports) > 0:
                     self.ER_app.VNFs_to_be_deleted = self.ER_app.scale(scaling_ports,'out')
+                    # wait unit scaling lock is released
+                    self.er_monitor.scaling_lock.acquire()
+                    self.er_monitor.scaling_lock.release()
+
+            scaling_time = time.time() - start_time
+            logging.info('scaling finished ({0} seconds)'.format(round(scaling_time, 2)))

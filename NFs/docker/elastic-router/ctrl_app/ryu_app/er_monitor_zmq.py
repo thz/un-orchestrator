@@ -102,6 +102,16 @@ class ElasticRouterMonitor:
 
         scaling_out_ports = []
 
+        # only scale out if lock is free
+        if self.scaling_lock.locked():
+            logging.info('Scaling already in progress')
+            return scaling_out_ports
+
+        # only scale out in case of single DP
+        if len(self.ERctrlapp.DP_instances) != 1:
+            logging.info('Scaling out not possible with multiple DPs')
+            return scaling_out_ports
+
         #  only scale out in case of single DP
         if len(self.ERctrlapp.DP_instances) != 1:
             return scaling_out_ports
@@ -121,7 +131,7 @@ class ElasticRouterMonitor:
     def scaling_finish(self):
         # scaled out DPs are detected (intermediate configuration)
         logging.info('scaling_intermediate_finish')
-        # TODO set openflow table of new DPs
+        # set openflow table of new DPs
         # fill of tables at DP creation during scaling
         # and fill tables at DP detection
 
@@ -154,6 +164,16 @@ class ElasticRouterMonitor:
 
     def start_scale_in_default(self):
         scaling_in_ports = []
+
+        # only scale in if lock is free
+        if self.scaling_lock.locked():
+            logging.info('Scaling already in progress')
+            return scaling_in_ports
+
+        #  only scale in in case of multiple DPs
+        if len(self.ERctrlapp.DP_instances) <= 1:
+            logging.info('Scaling in not possible with single DP')
+            return scaling_in_ports
 
         scaling_in_ports_DP = []
         for DP in self.ERctrlapp.DP_instances:

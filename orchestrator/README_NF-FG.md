@@ -886,7 +886,13 @@ When monitoring is required, the un-orchestrator automatically sends a message l
 					]
 				}
 				],
-				"measure" : "string written according to the MEASURE syntax"
+				"measure" : "string written according to the MEASURE syntax",
+				"sap": [
+					{
+						"interface": "eth1",
+						"name": "ingress"
+					}
+				]
 			}
 		}
 	}    
