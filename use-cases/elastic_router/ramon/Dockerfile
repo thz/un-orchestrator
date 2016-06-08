@@ -19,7 +19,6 @@ EXPOSE 5555
 
 # TODO: write a run.sh script that handles ENV variables properly
 RUN mkdir /ramon
-ADD ./run.sh /ramon/
 ADD ./ratemon_client.py /ramon/
 ADD ./ramon_src/* /ramon/
 WORKDIR /
@@ -40,8 +39,8 @@ ENV name=ramon
 ENV interface=veth0
 ENV ramon_port=55555
 ENV config_port=54736
-ENV RAMON_PATH=./ramon_src/run_monitor.py
-ENV DOUBLEDECKER_KEYS=/etc/doubledecker/public-keys.json
+ENV RAMON_PATH=/ramon/run_monitor.py
+ENV DOUBLEDECKER_KEYS=/keys/public-keys.json
 ENV RAMON_SAMPLE_RATE=20
 # samples/second; 20 means sample every 50ms
 ENV RAMON_ESTIMATION_INTERVAL=1

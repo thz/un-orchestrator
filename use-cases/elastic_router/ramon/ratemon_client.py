@@ -126,7 +126,7 @@ class SecureCli(ClientSafe):
             logging.warning('Malformed Json-Rpc: ' + str(msg_json))
 
     def get_config_param(self,msg_json, meth):
-        return {meth: msg_json['params'].get(meth)}        
+        return {meth: msg_json['params'].get(meth)}
 
     def send_config(self,config):
         self.tcp_client.connect(('127.0.0.1', self.qport))
@@ -140,8 +140,9 @@ class SecureCli(ClientSafe):
         rpc_obj_json = json.dumps(rpc_obj)
         self.publish('measurement', rpc_obj_json)
         # and start a RAMON instance
-        Popen(["xterm", "-geometry", "80x45+0+0", "-wf", "-T", "%s_ramon"%self.mname,
-               "-e", self.mpath + " -b %s %s ; read"%(str(self.mport), ' '.join(self.ramon_args))])
+        # Popen(["xterm", "-geometry", "80x45+0+0", "-wf", "-T", "%s_ramon"%self.mname,
+        #        "-e", self.mpath + " -b %s %s ; read"%(str(self.mport), ' '.join(self.ramon_args))])
+        Popen([self.mpath, "-b", str(self.mport)].append(self.ramon_args))
 
 
     # callback called upon registration of the client with its broker
@@ -234,7 +235,7 @@ class SecureCli(ClientSafe):
         result['overload_risk'] = ramon_data['overload_risk_rx']
         return result
 
-    # NOTE: Keep this code as a reference on how to send a configuration message to the rate monitor. 
+    # NOTE: Keep this code as a reference on how to send a configuration message to the rate monitor.
     def results_sender_OLD(self):
         while True:
             results = self.handlers.recv()
