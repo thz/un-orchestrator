@@ -44,9 +44,9 @@ Next steps:
 
 1. go to the correct directory:  `cd /un-orchestrator/use-cases/elastic_router/elastic_router_files`
 2. start the namespaces: `./start_veth`
-3. start the elastic router: `./start_ER`
+3. start the elastic router: `sudo ./start_ER`
 4. generate some traffic (from other terminal): `ip netns exec sap3 ping 10.0.4.1` 
-5. stop the elastic router and the UN (for a total reset): `./stop_ER`
+5. stop the elastic router and the UN (for a total reset): `sudo ./stop_ER`
 
 You can check the flow-tables of the deployed ovs container via remotely ssh login or locally via the docker command:
 
