@@ -3,20 +3,6 @@
 <universal-node xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
                  xsi:noNamespaceSchemaLocation="universal-node-schema.xsd">
 
-	<resources>
-		<cpu amount="1"/>
-		<memory amount="1" unit="GB"/>
-		<storage amount="1" unit="GB"/>
-		
-		<!--
-			Values for "unit":
-			* MB
-			* GB
-			* TB
-		-->
-		
-	</resources>	
-
 	<ports>
 		<port name="veth0un" type="ethernet" side="edge">
 			<virtualized as="virtual-sap1" port-type="port-sap" sap="sap1"/>
@@ -32,17 +18,6 @@
 		</port>
 		
 		<!-- 
-			Values for "type":
-			* ethernet
-			* wifi
-			
-			Note that not all the vSwitches supports DPDK ports.
-		
-			Values for "side":
-			* edge
-			* core
-			* none
-			
 			Values for "port-type":
 			* port-abstract
 			* port-type
