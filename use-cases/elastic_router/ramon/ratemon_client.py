@@ -1,5 +1,17 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+import argparse
+import logging
+import socket
+import socketserver
+import threading
+import json
+from subprocess import Popen
+from math import sqrt
+import zmq
+from doubledecker.clientSafe import ClientSafe
+
 __license__ = """
   Copyright (c) 2015 Pontus Sköldström, Bertrand Pechenot
 
@@ -27,25 +39,6 @@ __license__ = """
 """
 # Some parts, Copyright © 2016 SICS Swedish ICT AB
 
-import argparse
-import logging
-import socket
-import socketserver
-import threading
-import zmq
-import time
-import json
-#import os
-import sys
-from doubledecker.clientSafe import ClientSafe
-from math import sqrt
-from subprocess import Popen
-import pdb
-
-# Inherit ClientSafe and implement the abstract classes
-# ClientSafe does encryption and authentication using ECC (libsodium/nacl)
-
-
 class MonitoringDataHandler(socketserver.BaseRequestHandler):
 
     def setup(self):
@@ -58,13 +51,18 @@ class MonitoringDataHandler(socketserver.BaseRequestHandler):
         self.socket.send(data)
 
 
+# Inherit ClientSafe and implement the abstract classes
 class SecureCli(ClientSafe):
-#    def __init__(self, name, dealerurl, customer, keyfile, mpath, mport=55555, qport=54736, hello=True, ramon_args=None):
-    def __init__(self, name, dealerurl, keyfile, mpath, mport=55555, qport=54736, hello=True, ramon_args=None):
-#        super().__init__(name, dealerurl, customer, keyfile)
+    def __init__(self,
+                 name,
+                 dealerurl,
+                 keyfile,
+                 mpath,
+                 mport=55555,
+                 qport=54736,
+                 hello=True,
+                 ramon_args=None):
         super().__init__(name, dealerurl, keyfile)
-
-        self.b = True
 
         context = zmq.Context.instance()
         self.handlers = context.socket(zmq.REP)
@@ -75,8 +73,9 @@ class SecureCli(ClientSafe):
 
         socketserver.ThreadingTCPServer.allow_reuse_address = True
         self.tcp_server = socketserver.ThreadingTCPServer(('127.0.0.1', mport),
-                                             MonitoringDataHandler)
-        self.tcp_server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                                                          MonitoringDataHandler)
+        self.tcp_server.socket.setsockopt(
+            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.tcp_server.daemon = True
         self.serverThread = threading.Thread(
             target=self.tcp_server.serve_forever)
@@ -95,16 +94,24 @@ class SecureCli(ClientSafe):
     # Expects a Json-Rpc 2.0 like this
     # {"jsonrpc": "2.0", "method": <method name>, "params": { ... }}
     def on_data(self, src, msg):
-#        print("DATA from %s: %s" % (str(src), str(msg)))
-        logging.debug("DATA from %s: %s" % (str(src), str(msg)))
+        #        print("DATA from %s: %s" % (str(src), str(msg)))
+        logging.debug("DATA from %s: %s", str(src), str(msg))
         msg_json = json.loads(msg.decode("utf-8"))
         try:
             meth = msg_json['method']
             logging.debug('Command received: ' + meth)
             if 'status' == meth:
                 logging.warning('NYI command received: ' + meth)
-            if meth in ['interface', 'sample_rate', 'estimation_interval', 'meter_interval', 'link_speed', 'alarm_trigger', 'cutoff']:
-                self.send_config(self.get_config_param(msg_json,meth))
+            if meth in [
+                    'interface',
+                    'sample_rate',
+                    'estimation_interval',
+                    'meter_interval',
+                    'link_speed',
+                    'alarm_trigger',
+                    'cutoff']:
+                self.send_config({meth: msg_json['params'].get(meth)})
+                # self.get_config_param(msg_json, meth))
             elif 'exit' == meth:
                 self.send_config({'exit': True})
             elif 'pause' == meth:
@@ -113,45 +120,54 @@ class SecureCli(ClientSafe):
                 self.send_config({'resume': True})
             elif 'poll_data' == meth:
                 # We get this notification from the aggregator
-                if self.last_ramon_data != None:
+                if self.last_ramon_data is not None:
                     filtered_data = self.filter_ramon_data(self.last_ramon_data)
-                    rpc_obj = {"jsonrpc": "2.0", "method": "rate_data", "params": filtered_data}
+                    rpc_obj = {
+                        "jsonrpc": "2.0",
+                        "method": "rate_data",
+                        "params": filtered_data}
                     rpc_obj_json = json.dumps(rpc_obj)
                     self.publish('measurement', rpc_obj_json)
             elif 'start' == meth:
                 # We get this notification from the MMP
                 self.start_ramon()
-            else: logging.warning('Unknown command received:' + meth)
-        except KeyError as ke:
+            else:
+                logging.warning('Unknown command received:' + meth)
+        except KeyError:
             logging.warning('Malformed Json-Rpc: ' + str(msg_json))
 
-    def get_config_param(self,msg_json, meth):
-        return {meth: msg_json['params'].get(meth)}
-
-    def send_config(self,config):
+#     def get_config_param(self, msg_json, meth):
+#         return {meth: msg_json['params'].get(meth)}
+#
+    def send_config(self, config):
         self.tcp_client.connect(('127.0.0.1', self.qport))
         self.tcp_client.sendmsg(config)
         self.tcp_client.close()
 
-
     def start_ramon(self):
         # Register this rate monitor with the aggregator
-        rpc_obj = {"jsonrpc": "2.0", "method": "add_monitor", "params": {"name": self.mname}}
+        rpc_obj = {
+            "jsonrpc": "2.0",
+            "method": "add_monitor",
+            "params": {
+                "name": self.mname}}
         rpc_obj_json = json.dumps(rpc_obj)
         self.publish('measurement', rpc_obj_json)
         # and start a RAMON instance
-        # Popen(["xterm", "-geometry", "80x45+0+0", "-wf", "-T", "%s_ramon"%self.mname,
-        #        "-e", self.mpath + " -b %s %s ; read"%(str(self.mport), ' '.join(self.ramon_args))])
         Popen([self.mpath, "-b", str(self.mport)]+self.ramon_args)
-
 
     # callback called upon registration of the client with its broker
     def on_reg(self):
-#        print("The client is now connected")
+        #        print("The client is now connected")
         logging.info("The client is now connected")
         # Say hello to the MMP
         if self.hello:
-            rpc_obj = {"jsonrpc": "2.0", "method": "hello", "params": {"name": self.mname, "type": "ratemon"}}
+            rpc_obj = {
+                "jsonrpc": "2.0",
+                "method": "hello",
+                "params": {
+                    "name": self.mname,
+                    "type": "ratemon"}}
             rpc_obj_json = json.dumps(rpc_obj)
             self.publish('unify:mmp', rpc_obj_json)
         else:
@@ -161,32 +177,38 @@ class SecureCli(ClientSafe):
     # its broker has failed, it can happen if the broker is terminated/crash
     # or if the link is broken
     def on_discon(self):
-#        print("The client got disconnected")
+        #        print("The client got disconnected")
         logging.info("The client got disconnected")
 
     # callback called when the client receives an error message
     def on_error(self, code, msg):
-#        print("ERROR n#%d : %s" % (code, msg))
-        logging.error("ERROR n#%d : %s" % (code, msg))
+        #        print("ERROR n#%d : %s" % (code, msg))
+        logging.error("ERROR n#%d : %s", int(code), str(msg))
 
     # callback called when the client receives a message on a topic he
     # subscribed to previously
     def on_pub(self, src, topic, msg):
-#        print("PUB %s from %s: %s" % (str(topic), str(src), str(msg)))
-        logging.info("PUB %s from %s: %s" % (str(topic), str(src), str(msg)))
+        #        print("PUB %s from %s: %s" % (str(topic), str(src), str(msg)))
+        logging.info("PUB %s from %s: %s", str(topic), str(src), str(msg))
 
     def start(self):
         logging.info('Starting to serve requests')
-        self.serverThread.daemon = True # [PD] 2016-06-07, see if this helps on shutdown ...
+        # [PD] 2016-06-07, see if this helps on shutdown ...
+        self.serverThread.daemon = True
         self.serverThread.start()
-        self.handlersThread.daemon = True # [PD] 2016-06-07, see if this helps on shutdown ...
+        # [PD] 2016-06-07, see if this helps on shutdown ...
+        self.handlersThread.daemon = True
         self.handlersThread.start()
         super().start()
 
     def shutdown(self):
         # Un-register this monitor with the aggregator
         logging.info("\nShutting down")
-        rpc_obj = {"jsonrpc": "2.0", "method": "remove_monitor", "params": {"name": self.mname}}
+        rpc_obj = {
+            "jsonrpc": "2.0",
+            "method": "remove_monitor",
+            "params": {
+                "name": self.mname}}
         rpc_obj_json = json.dumps(rpc_obj)
         self.publish('measurement', rpc_obj_json)
         #
@@ -203,10 +225,10 @@ class SecureCli(ClientSafe):
 
     def results_sender(self):
         while True:
-#            pdb.set_trace()
+            #            pdb.set_trace()
             rate_data = self.handlers.recv().decode('utf-8')
             results = json.loads(rate_data)
-            print(".",end="",flush=True)
+            print('.', end='', flush=True)
             logging.debug(results)
             if 'exited' in results:
                 self.shutdown()
@@ -217,16 +239,18 @@ class SecureCli(ClientSafe):
                 send_immediate = False
                 if send_immediate:
                     filtered_data = self.filter_ramon_data(results)
-                    rpc_obj = {"jsonrpc": "2.0", "method": "rate_data", "params": filtered_data}
+                    rpc_obj = {
+                        "jsonrpc": "2.0",
+                        "method": "rate_data",
+                        "params": filtered_data}
                     rpc_obj_json = json.dumps(rpc_obj)
                     self.publish('measurement', rpc_obj_json)
                 else:
                     self.last_ramon_data = results
             self.handlers.send(b'')
 
-
-    def filter_ramon_data(self,ramon_data):
-#        pdb.set_trace()
+    def filter_ramon_data(self, ramon_data):
+        #        pdb.set_trace()
         result = {}
         result['lm'] = float(ramon_data['mu_rx'])
         result['lsd'] = sqrt(float(ramon_data['sigma2_rx']))
@@ -235,28 +259,31 @@ class SecureCli(ClientSafe):
         result['overload_risk'] = ramon_data['overload_risk_rx']
         return result
 
-    # NOTE: Keep this code as a reference on how to send a configuration message to the rate monitor.
-    def results_sender_OLD(self):
-        while True:
-            results = self.handlers.recv()
-            print(results)
-            if self.b:
-                    print("changing leek speed")
-                    time.sleep(1)
-                    self.tcp_client.connect(('127.0.0.1', 54736))
-                    message_ = {'link_speed': 42}
-                    print(message_)
-                    self.tcp_client.send(bytes(json.dumps(message_), encoding='utf-8'))
-                    reply = self.tcp_client.recv(1024)
-                    print(reply)
-                    self.b = False
-            # self.sendmsg('agg', results)
-            self.handlers.send(b'')
+    # NOTE: Keep this code as a reference on how to send a configuration
+    # message to the rate monitor.
+    # def results_sender_OLD(self):
+    #     while True:
+    #         results = self.handlers.recv()
+    #         print(results)
+    #         if self.b:
+    #             print("changing leek speed")
+    #             time.sleep(1)
+    #             self.tcp_client.connect(('127.0.0.1', 54736))
+    #             message_ = {'link_speed': 42}
+    #             print(message_)
+    #             self.tcp_client.send(
+    #                 bytes(
+    #                     json.dumps(message_),
+    #                     encoding='utf-8'))
+    #             reply = self.tcp_client.recv(1024)
+    #             print(reply)
+    #             self.b = False
+    #         # self.sendmsg('agg', results)
+    #         self.handlers.send(b'')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generic message client")
     parser.add_argument('name', help="Identity of this client")
-#    parser.add_argument( 'customer', help="Name of the customer to get the keys (i.e. 'a' for the customer-a.json file)")
     parser.add_argument(
         '-d',
         "--dealer",
@@ -270,11 +297,9 @@ if __name__ == '__main__':
         nargs='?',
         default=None)
     parser.add_argument(
-        '-l',
-        "--loglevel",
+        '-l', "--loglevel",
         help='Set loglevel (DEBUG, INFO, WARNING, ERROR, CRITICAL) (Default: %(default)s)',
-        nargs='?',
-        default="INFO")
+        nargs='?', default="INFO")
     parser.add_argument(
         '-k',
         "--keyfile",
@@ -294,12 +319,9 @@ if __name__ == '__main__':
         type=int,
         default='55555')
     parser.add_argument(
-        '-q',
-        "--config_port",
+        '-q', "--config_port",
         help='Port for sending configuration to the rate monitor (Default: %(default)s)',
-        nargs='?',
-        type=int,
-        default='54736')
+        nargs='?', type=int, default='54736')
     parser.add_argument(
         '-r',
         "--ramon_path",
@@ -318,17 +340,18 @@ if __name__ == '__main__':
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % args.loglevel)
 
-    logging.basicConfig(format='%(levelname)s:%(message)s', filename=args.logfile, level=numeric_level)
+    logging.basicConfig(format='%(levelname)s:%(message)s',
+                        filename=args.logfile,
+                        level=numeric_level)
 
     logging.info("Safe client")
     genclient = SecureCli(name=args.name,
                           dealerurl=args.dealer,
-#                          customer=args.customer,
                           keyfile=args.keyfile,
                           mpath=args.ramon_path,
                           mport=args.ramon_port,
                           qport=args.config_port,
-                          hello= not args.no_hello,
+                          hello=not args.no_hello,
                           ramon_args=args.ramon_args)
 
     logging.info("Starting DoubleDecker example client")
