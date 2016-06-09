@@ -142,7 +142,7 @@ class SecureCli(ClientSafe):
         # and start a RAMON instance
         # Popen(["xterm", "-geometry", "80x45+0+0", "-wf", "-T", "%s_ramon"%self.mname,
         #        "-e", self.mpath + " -b %s %s ; read"%(str(self.mport), ' '.join(self.ramon_args))])
-        Popen([self.mpath, "-b", str(self.mport)].append(self.ramon_args))
+        Popen([self.mpath, "-b", str(self.mport)]+self.ramon_args)
 
 
     # callback called upon registration of the client with its broker
