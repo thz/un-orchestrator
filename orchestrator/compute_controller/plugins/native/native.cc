@@ -112,11 +112,16 @@ bool Native::isSupported(Description& descr) {
 	}
 	return true;
 }
+bool Native::updateNF(UpdateNFIn uni)
+{
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Update not supported by this type of functions");
+	return false;
+}
 
 bool Native::startNF(StartNFIn sni) {
 
 	uint64_t lsiID = sni.getLsiID();
-	std::string nf_name = sni.getNfName();
+	std::string nf_name = sni.getNfId();
 	map<unsigned int, string> namesOfPortsOnTheSwitch = sni.getNamesOfPortsOnTheSwitch();
 	unsigned int n_ports = namesOfPortsOnTheSwitch.size();
 
@@ -155,7 +160,7 @@ bool Native::startNF(StartNFIn sni) {
 bool Native::stopNF(StopNFIn sni) {
 
 	uint64_t lsiID = sni.getLsiID();
-	std::string nf_name = sni.getNfName();
+	std::string nf_name = sni.getNfId();
 
 	std::stringstream command;
 	command << STOP_NATIVE_NF << " " << lsiID << " " << nf_name;

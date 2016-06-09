@@ -202,7 +202,6 @@ public:
 
 	virtual void setAllCommonFields(Match match);
 
-	virtual void print();
 	virtual string prettyPrint();
 	virtual void toJSON(Object &match);
 };

@@ -39,13 +39,20 @@ SQLiteManager *dbm = NULL;
 /**
 *	Private prototypes
 */
-bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file, bool *init_db, char **pwd);
-bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char **nffg_file_name, char **ports_file_name, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate);
+
+//<<<<<<< HEAD
+//bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file, bool *init_db, char **pwd);
+//bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char **nffg_file_name, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate);
+//=======
+bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file);
+//bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char **nffg_file_name, char **ports_file_name, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate);
+//>>>>>>> permissions
+bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char **nffg_file_name, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate);
+
 bool usage(void);
 void printUniversalNodeInfo();
 bool doChecks(void);
 void terminateRestServer(void);
-bool createDB(SQLiteManager *dbm, char *pwd);
 
 /**
 *	Implementations
@@ -58,8 +65,10 @@ void singint_handler(int sig)
 	MHD_stop_daemon(http_daemon);
 	terminateRestServer();
 
-	if(dbm != NULL)
-		dbm->eraseAllToken();
+	if(dbm != NULL) {
+		//dbm->updateDatabase();
+		dbm->cleanTables();
+	}
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
 	DoubleDeckerClient::terminate();
@@ -89,9 +98,9 @@ int main(int argc, char *argv[])
 
 	int core_mask;
 	int rest_port, t_rest_port;
-	bool cli_auth, t_cli_auth, orchestrator_in_band, t_orchestrator_in_band, init_db = false;
+	bool cli_auth, t_cli_auth, orchestrator_in_band, t_orchestrator_in_band;
 	char *config_file_name = new char[BUFFER_SIZE];
-	char *ports_file_name = new char[BUFFER_SIZE], *t_ports_file_name = NULL;
+	set<string> physical_ports;
 	char *nffg_file_name = new char[BUFFER_SIZE], *t_nffg_file_name = NULL;
 	char *descr_file_name = new char[BUFFER_SIZE], *t_descr_file_name = NULL;
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
@@ -103,29 +112,27 @@ int main(int argc, char *argv[])
 	char *un_interface = new char[BUFFER_SIZE], *t_un_interface = NULL;
 	char *un_address = new char[BUFFER_SIZE], *t_un_address = NULL;
 	char *ipsec_certificate = new char[BUFFER_SIZE], *t_ipsec_certificate = NULL;
-	char *pwd = new char[BUFFER_SIZE];
 
 	string s_un_address;
 	string s_ipsec_certificate;
 
 	strcpy(config_file_name, DEFAULT_FILE);
 
-	if(!parse_command_line(argc,argv,&core_mask,&config_file_name,&init_db,&pwd))
+	if(!parse_command_line(argc,argv,&core_mask,&config_file_name))
 		exit(EXIT_FAILURE);
 
-	if(!parse_config_file(config_file_name,&t_rest_port,&t_cli_auth,&t_nffg_file_name,&t_ports_file_name,&t_descr_file_name,&t_client_name,&t_broker_address,&t_key_path,&t_orchestrator_in_band,&t_un_interface,&t_un_address,&t_ipsec_certificate))
+	if(!parse_config_file(config_file_name,&t_rest_port,&t_cli_auth,&t_nffg_file_name,physical_ports,&t_descr_file_name,&t_client_name,&t_broker_address,&t_key_path,&t_orchestrator_in_band,&t_un_interface,&t_un_address,&t_ipsec_certificate))
 		exit(EXIT_FAILURE);
-
-	strcpy(ports_file_name, t_ports_file_name);
-	if(strcmp(t_nffg_file_name, "UNKNOWN") != 0)
-		strcpy(nffg_file_name, t_nffg_file_name);
-	else
-		nffg_file_name = NULL;
 
 	if(strcmp(t_descr_file_name, "UNKNOWN") != 0)
 		strcpy(descr_file_name, t_descr_file_name);
 	else
 		descr_file_name = NULL;
+
+	if(strcmp(t_nffg_file_name, "UNKNOWN") != 0)
+		strcpy(nffg_file_name, t_nffg_file_name);
+	else
+		nffg_file_name = NULL;
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
 	if(strcmp(t_client_name, "UNKNOWN") != 0)
@@ -181,25 +188,14 @@ int main(int argc, char *argv[])
 		s_ipsec_certificate.erase(s_ipsec_certificate.size()-1,1);
 	}
 
-	//test if client authentication is required and if true initialize database
-	if(cli_auth)
-	{
-		//connect to database
-		dbm = new SQLiteManager(DB_NAME);
-		if(init_db)
-		{
-			if(!createDB(dbm, pwd))
-			{
-				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Database already initialized, argument \"--i\" cannot be specified");
-				exit(EXIT_FAILURE);
-			}
-		}
-	}
-	else
-	{
-		if(init_db)
-		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--i\" can appear only if authentication is required");
+	if(cli_auth) {
+		std::ifstream ifile(DB_NAME);
+
+		if(ifile)
+			dbm = new SQLiteManager(DB_NAME);
+		else {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Database does not exist!");
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Run 'db_initializer' at first.");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -217,7 +213,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	if(!RestServer::init(dbm,cli_auth,nffg_file_name,core_mask,ports_file_name,s_un_address,orchestrator_in_band,un_interface,ipsec_certificate))
+	if(!RestServer::init(dbm,cli_auth,nffg_file_name,core_mask,physical_ports,s_un_address,orchestrator_in_band,un_interface,ipsec_certificate))
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
@@ -251,7 +247,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file_name,bool *init_db,char **pwd)
+bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file_name)
 {
 	int opt;
 	char **argvopt;
@@ -260,7 +256,6 @@ bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file
 static struct option lgopts[] = {
 		{"c", 1, 0, 0},
 		{"d", 1, 0, 0},
-		{"i", 1, 0, 0},
 		{"h", 0, 0, 0},
 		{NULL, 0, 0, 0}
 	};
@@ -302,14 +297,6 @@ static struct option lgopts[] = {
 
 	   				arg_c++;
 	   			}
-				else if (!strcmp(lgopts[option_index].name, "i"))/* inserting admin password */
-	   			{
-					*init_db = true;
-
-					strcpy(*pwd, optarg);
-
-	   				arg_c++;
-	   			}
 				else if (!strcmp(lgopts[option_index].name, "h"))/* help */
 	   			{
 	   				return usage();
@@ -328,9 +315,8 @@ static struct option lgopts[] = {
 	return true;
 }
 
-bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, char **nffg_file_name, char **ports_file_name, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate)
+bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, char **nffg_file_name, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate)
 {
-	ports_file_name[0] = '\0';
 	nffg_file_name[0] = '\0';
 	*rest_port = REST_PORT;
 
@@ -346,15 +332,32 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 		return false;
 	}
 
-	/* physical ports file name */
-	char *temp_config_file = new char[64];
-	strcpy(temp_config_file, (char *)reader.Get("rest server", "configuration_file", "UNKNOWN").c_str());
-	if(strcmp(temp_config_file, "UNKNOWN") != 0 && strcmp(temp_config_file, "") != 0)
-		*ports_file_name = temp_config_file;
-	else
+	/* Physical ports */
+	char *tmp_physical_ports = new char[64];
+	strcpy(tmp_physical_ports, (char *)reader.Get("physical ports", "ports_name", "UNKNOWN").c_str());
+	if(strcmp(tmp_physical_ports, "UNKNOWN") != 0 && strcmp(tmp_physical_ports, "") != 0)
 	{
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Physical ports file must be present");
-		return false;
+		logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Physical ports read from configuation file: %s",tmp_physical_ports);
+		//the string must start and terminate respectively with [ and ]
+		if((tmp_physical_ports[strlen(tmp_physical_ports)-1] != ']') || (tmp_physical_ports[0] != '[') )
+		{
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Wrong list of physical ports '%s'. It must be enclosed in '[...]'",tmp_physical_ports);
+			return false;
+		}
+		tmp_physical_ports[strlen(tmp_physical_ports)-1] = '\0';
+		tmp_physical_ports++;
+		
+		//the string just read must be tokenized
+		char delimiter[] = " ";
+	 	char * pnt;
+	 	pnt=strtok(tmp_physical_ports, delimiter);
+	 	while(pnt!= NULL)
+	 	{
+	 		logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tphysical port: %s",pnt);
+		 	string s(pnt);
+		 	physical_ports.insert(pnt);
+		 	pnt = strtok( NULL, delimiter );
+	 	}
 	}
 
 	/* REST port */
@@ -412,37 +415,6 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 	return true;
 }
 
-bool createDB(SQLiteManager *dbm, char *pass)
-{
-	/*
-	*
-	* Initializing user database
-	*
-	*/
-
-	unsigned char *hash_token = new unsigned char[HASH_SIZE];
-	char *hash_pwd = new char[BUFFER_SIZE];
-	char *tmp = new char[HASH_SIZE];
-	char *pwd = new char[HASH_SIZE];
-
-	if(dbm->createTable()){
-		strcpy(pwd, pass);
-
-		SHA256((const unsigned char*)pwd, sizeof(pwd) - 1, hash_token);
-
-		for (int i = 0; i < HASH_SIZE; i++) {
-			sprintf(tmp, "%x", hash_token[i]);
-			strcat(hash_pwd, tmp);
-	    	}
-
-		dbm->insertUsrPwd("admin", (char *)hash_pwd);
-
-		return true;
-	}
-
-	return false;
-}
-
 bool usage(void)
 {
 	stringstream message;
@@ -460,8 +432,6 @@ bool usage(void)
 	"        Mask that specifies which cores must be used for DPDK network functions. These   \n" \
 	"        cores will be allocated to the DPDK network functions in a round robin fashion   \n" \
 	"        (default is 0x2)                                                                 \n" \
-	"  --i admin_password                                                                     \n" \
-	"        Initialize local database and set the password for the default 'admin' user  	  \n" \
 	"  --h                                                                                    \n" \
 	"        Print this help.                                                                 \n" \
 	"                                                                                         \n" \
@@ -498,7 +468,7 @@ logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "****************************
 #ifdef VSWITCH_IMPLEMENTATION_ERFS
 	string vswitch = "ERFS";
 #endif
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* Virtual switch used: '%s'",vswitch.c_str());
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* Virtual switch used: '%s'", vswitch.c_str());
 
 	list<string> executionenvironment;
 #ifdef ENABLE_KVM
@@ -523,8 +493,7 @@ logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "****************************
 /**
 *	This function checks if the UN is properly configured.
 */
-bool doChecks(void)
-{
+bool doChecks(void) {
 
 #ifdef VSWITCH_IMPLEMENTATION_OFCONFIG
 	logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The support to OFCONFIG is deprecated.");
@@ -533,13 +502,10 @@ bool doChecks(void)
 	return true;
 }
 
-void terminateRestServer()
-{
-	try
-	{
+void terminateRestServer() {
+	try {
 		RestServer::terminate();
-	}catch(...)
-	{
+	} catch(...) {
 		//Do nothing, since the program is terminating
 	}
 }

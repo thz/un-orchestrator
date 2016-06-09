@@ -11,8 +11,10 @@
 
 #define REST_PORT 				8080
 #define BASE_URL_GRAPH			"NF-FG"
-#define BASE_URL_IFACES			"interfaces"
+#define URL_STATUS				"status"
 #define BASE_URL_LOGIN			"login"
+#define BASE_URL_USER			"users"
+#define BASE_URL_GROUP			"groups"
 #define REST_URL 				"http://localhost"
 #define REQ_SIZE 				2*1024*1024
 
@@ -52,17 +54,15 @@
 			#define PORT_IP				"unify-ip"
 		#define	VNF_GROUPS		"groups"
 	#define END_POINTS		"end-points"
-		//#define EP_ID     		"id"
-		//#define EP_NAME     		"name"
+		//#define EP_ID			"id"
+		//#define EP_NAME		"name"
 		#define EP_TYPE			"type"
-		#define EP_REM			"remote_endpoint_id"
-		#define EP_PR			"prepare_connection_to_remote_endpoint_ids"
-		//#define EP_IFACE   		"interface"
+		#define EP_IFACE		"interface"
 		#define EP_INTERNAL		"internal"
+			#define	INTERNAL_GROUP		"internal-group"
 		#define EP_IFACE_OUT	"interface-out"
 			#define NODE_ID			"node-id"
-			#define SW_ID			"switch-id"
-			#define IFACE			"interface"
+			#define IF_NAME			"if-name"
 		#define EP_GRE			"gre-tunnel"
 			//#define GRE				"gre"
 			#define LOCAL_IP		"local-ip"
@@ -155,38 +155,6 @@
 */
 #define CORE_MASK				0x2
 
-/**
-*	@brief: Constants related to the configuration file containing the description of the physical ports
-*
-*	XXX This constants must be updated in case the XML schema is modified
-*/
-#define PHY_PORTS_XSD			"config/universal-node-schema.xsd"
-
-#define RESOURCES_ELEMENT		"resources"
-#define CPU_ELEMENT				"cpu"
-#define MEMORY_ELEMENT			"memory"
-#define STORAGE_ELEMENT			"storage"
-#define AMOUNT_ATTRIBUTE		"amount"
-#define UNIT_ATTRIBUTE			"unit"
-
-#define PORTS_ELEMENT			"ports"
-#define PORT_ELEMENT			"port"
-#define NAME_ATTRIBUTE			"name"
-#define TYPE_ATTRIBUTE			"type"
-#define SIDE_ATTRIBUTE			"side"
-
-#define VIRTUALIZED_ELEMENT		"virtualized"
-#define AS_ATTRIBUTE			"as"
-#define PORT_TYPE_ATTRIBUTE		"port-type"
-#define SAP_ATTRIBUTE			"sap"
-
-#define TYPE_ETHERNET			"ethernet"
-#define TYPE_WIFI				"wifi"
-
-#define SIDE_CORE				"core"
-#define SIDE_EDGE				"edge"
-#define SIDE_NONE				"none"
-
 /*
  * Supported Openflow versions.
  */
@@ -219,6 +187,7 @@ extern ofp_version_t OFP_VERSION;
 #define ADMIN				"admin"
 #define USER				"username"
 #define PASS				"password"
+#define GROUP				"group"
 #define HASH_SIZE			20
 #define TOKEN_TYPE			"application/token"
 #define DB_NAME				"users.db"
@@ -228,6 +197,18 @@ extern ofp_version_t OFP_VERSION;
 *	OpenFlow
 */
 #define HIGH_PRIORITY 		65535
+
+/*
+ *	Database
+ */
+#define PERMISSION_LEN	3	// CRUD
+#define ALLOW			"A"
+#define DENY			"D"
+
+#define DEFAULT_NFFG_OWNER_PERMISSION "AAA"
+#define DEFAULT_NFFG_GROUP_PERMISSION "ADD"
+#define DEFAULT_NFFG_ALL_PERMISSION "DDD"
+#define DEFAULT_NFFG_ADMIN_PERMISSION "AAA"
 
 /*
 *	Misc
