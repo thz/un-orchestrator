@@ -495,6 +495,10 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 #endif
 
 #ifdef ENABLE_UNIFY_MONITORING_CONTROLLER
+	/**
+	*	Stop the monitoring controller
+	*/
+
 	MonitoringController *monitoringController = graphInfo.getMonitoringController();
 	monitoringController->stopMonitoring();
 #endif
@@ -535,6 +539,36 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 	}
 
 	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
+
+#ifdef ENABLE_UNIFY_MONITORING_CONTROLLER
+	/**
+	*	Start again the monitoring controller
+	*/
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Starting the monitoring controller related to the new graph");
+
+
+	//Prepare the info related to the physical ports
+	list< pair<string, string> > portsMapping;
+	list<highlevel::EndPointInterface> epsInterface = graph->getEndPointsInterface();
+	for(list<highlevel::EndPointInterface>::iterator interface = epsInterface.begin(); interface != epsInterface.end(); interface++)
+		portsMapping.push_back(make_pair(interface->getName(),interface->getInterface()));
+
+	//XXX super ad hoc code that makes assumptions on how the compute controller creates the names 
+	list< pair<string, string> > vnfsMapping;
+	list<map<unsigned int, string> > vnfsPortsMapping;
+	
+	list<highlevel::VNFs> vnfs = graph->getVNFs();
+	for(list<highlevel::VNFs>::iterator vnf = vnfs.begin(); vnf != vnfs.end(); vnf++)
+	{
+		stringstream name;
+		name << lsi->getDpid() << "_" << vnf->getName();
+		vnfsMapping.push_back(make_pair(vnf->getId(),name.str()));
+		
+		vnfsPortsMapping.push_back(lsi->getNetworkFunctionsPortsNameOnSwitchMap(vnf->getName()));
+	}
+
+	monitoringController->startMonitoring(graph->getMeasureString(),portsMapping,vnfsMapping,vnfsPortsMapping);
+#endif
 
 	return true;
 }
@@ -1129,7 +1163,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 {
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Updating the graph '%s'...",graphID.c_str());
-
 	assert(tenantLSIs.count(graphID) != 0);
 
 	//Retrieve the information already stored for the graph (i.e., retrieve the as it is
@@ -1141,6 +1174,12 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	Controller *tenantController = graphInfo.getController();
 
 	uint64_t dpid = lsi->getDpid();
+
+#ifdef ENABLE_UNIFY_MONITORING_CONTROLLER
+	MonitoringController *monitoringController = graphInfo.getMonitoringController();
+	monitoringController->stopMonitoring();
+#endif
+
 
 	/**
 	*	Outline:
@@ -1627,7 +1666,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 		*/
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "6) Starting the monitoring controller related to the new graph");
 
-		MonitoringController *monitoringController = (tenantLSIs.find(graphID))->second.getMonitoringController();
+//		MonitoringController *monitoringController = (tenantLSIs.find(graphID))->second.getMonitoringController();
 
 		//Prepare the info related to the physical ports
 		list< pair<string, string> > portsMapping;
