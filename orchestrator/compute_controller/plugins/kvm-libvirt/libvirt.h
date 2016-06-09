@@ -67,6 +67,7 @@ public:
 
 	bool startNF(StartNFIn sni);
 	bool stopNF(StopNFIn sni);
+	bool updateNF(UpdateNFIn uni);
 };
 
 #endif //LIBVIRT_H_

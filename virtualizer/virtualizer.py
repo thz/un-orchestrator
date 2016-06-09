@@ -88,7 +88,7 @@ class DoGetConfig:
 
 class DoEditConfig:
 	
-	def on_post(self,req,resp):
+	def on_post(self, req, resp):
 		'''
 		Edit the configuration of the node
 		'''
@@ -112,34 +112,24 @@ class DoEditConfig:
 			
 			vnfsToBeAdded = extractVNFsInstantiated(content)	#VNF deployed/to be deployed on the universal node
 
-			rules, endpoints = extractRules(content)			#Flowrules and endpoints installed/to be installed on the universal node
+			rulesToBeAdded, endpoints = extractRules(content)			#Flowrules and endpoints installed/to be installed on the universal node
 				
-			vnfsToBeRemoved = extractToBeRemovedVNFs(content)	#VNFs to be removed from the universal node
+			#vnfsToBeRemoved = extractToBeRemovedVNFs(content)	#VNFs to be removed from the universal node
 				
-			rulesToBeRemoved = extractToBeRemovedRules(content) #Rules to be removed from the universal node
-				
-			#Selects, among the rules listed in the received configuration, those that are not 
-			#installed yet in the universal node
-			rulesToBeAdded = diffRulesToBeAdded(rules)
-			#XXX The previous operation is not done for VNFs, since the universal node orchestrator supports such a case	
-		
+			#rulesToBeRemoved = extractToBeRemovedRules(content) #Rules to be removed from the universal node
+
 			#
 			# Interact with the universal node orchestrator in order to implement the required commands
 			#
 			
-			if len(rulesToBeAdded) != 0:
-				#XXX: this is a limitation of the universal node orchestrator, which does not allow to deploy a
-				#	  VNF without flows involving such a VNF
-				instantiateOnUniversalNode(rulesToBeAdded,vnfsToBeAdded, endpoints)	#Sends the new VNFs and flow rules to the universal node orchestrator
+			sendToUniversalNode(rulesToBeAdded,vnfsToBeAdded, endpoints)	#Sends the new VNFs and flow rules to the universal node orchestrator
 		
-			removeFromUniversalNode(rulesToBeRemoved,vnfsToBeRemoved) #Save on a file the IDs of the rules and the NFs to be removed from the universal node
-	
 			# 
 			# The required modifications have been implemented in the universal node, then we can update the
 			# configuration saved in the proper files
 			#
 
-			updateGraphFile(rulesToBeAdded, vnfsToBeAdded, endpoints, rulesToBeRemoved, vnfsToBeRemoved) #Update the json representation of the deployed graph
+			#updateGraphFile(rulesToBeAdded, vnfsToBeAdded, endpoints, rulesToBeRemoved, vnfsToBeRemoved) #Update the json representation of the deployed graph
 			
 			un_config = updateUniversalNodeConfig(content) #Updates the file containing the current configuration of the universal node, by editing the #<flowtable> and the <NF_instances> and returning the xml
 			
@@ -160,7 +150,6 @@ class DoEditConfig:
 		except Exception as err:
 			LOG.exception(err)
 			resp.status = falcon.HTTP_500
-			
 
 def checkCorrectness(newContent):
 	'''
@@ -383,7 +372,7 @@ def extractVNFsInstantiated(content):
 def extractRules(content):
 	'''
 	Parses the message and translates the flowrules in the internal JSON representation
-	Returns a json representing the rules in the internal format of the universal node
+	Returns the rules and the endpoints in the internal format of the universal node
 	'''
 		
 	LOG.debug("Extracting the flowrules to be installed in the universal node")
@@ -557,7 +546,7 @@ def extractRules(content):
 		LOG.debug(rule.getDict())
 	
 	return flowrules, endpoints_dict.values()
-	
+"""
 def	extractToBeRemovedVNFs(content):
 	'''
 	Parses the message and identifies those network functions to be removed
@@ -653,7 +642,7 @@ def extractToBeRemovedRules(content):
 			ids.append(f_id)
 
 	return ids
-	
+
 def diffRulesToBeAdded(newRules):
 	'''
 	Read the graph currently deployed. It is stored in a tmp file, in a json format.
@@ -700,6 +689,7 @@ def diffRulesToBeAdded(newRules):
 			rulesToBeAdded.append(newRule)
 			
 	return rulesToBeAdded
+"""	
 """
 def getLowerPortId(nf):
 	'''
@@ -751,7 +741,7 @@ def equivalentAction(tag):
 	'''
 	return constants.equivalent_actions[tag]
 
-	
+"""
 def updateGraphFile (newRules,newVNFs, newEndpoints, rulesToBeRemoved, vnfsToBeRemoved):
 	'''
 	Read the graph currently deployed. It is stored in a tmp file, in a json format.
@@ -823,7 +813,7 @@ def updateGraphFile (newRules,newVNFs, newEndpoints, rulesToBeRemoved, vnfsToBeR
 	except IOError as e:
 		print "I/O error({0}): {1}".format(e.errno, e.strerror)
 		raise ServerError("I/O error")
-		
+"""
 def updateUniversalNodeConfig(newContent):
 	'''
 	Read the configuration of the universal node, and applies the required modifications to
@@ -846,7 +836,7 @@ def updateUniversalNodeConfig(newContent):
 	nfInstances = universal_node.NF_instances
 	
 	
-	LOG.debug("Getting the new flowrules to be installed on the universal node")
+	#LOG.debug("Getting the new flowrules to be installed on the universal node")
 	try:
 		newTree = ET.ElementTree(ET.fromstring(newContent))
 	except ET.ParseError as e:
@@ -908,7 +898,7 @@ def updateUniversalNodeConfig(newContent):
 '''
 	Methods used to interact with the universal node orchestrator
 '''
-def instantiateOnUniversalNode(rulesToBeAdded,vnfsToBeAdded, endpoints):
+def sendToUniversalNode(rules, vnfs, endpoints):
 	'''
 	Deploys rules and VNFs on the universal node
 	'''
@@ -919,69 +909,49 @@ def instantiateOnUniversalNode(rulesToBeAdded,vnfsToBeAdded, endpoints):
 	nffg.name = graph_name
 	if unify_monitoring != "":
 		nffg.unify_monitoring = unify_monitoring
-	nffg.flow_rules = rulesToBeAdded
-	nffg.vnfs = vnfsToBeAdded
+	nffg.flow_rules = rules
+	nffg.vnfs = vnfs
 	nffg.end_points = endpoints
 	
 	#Delete endpoints that are not involved in any flowrule
 	for endpoint in nffg.end_points[:]:
 		if not nffg.getFlowRulesSendingTrafficToEndPoint(endpoint.id) and not nffg.getFlowRulesSendingTrafficFromEndPoint(endpoint.id):
 			nffg.end_points.remove(endpoint)
-	
-	LOG.debug("Graph that is going to be sent to the universal node orchestrator:")
-	LOG.debug("%s",nffg.getJSON())
-	
-	put_url = unOrchestratorURL + "/NF-FG/%s"
-	if debug_mode is False:
-		try:
-			headers = {'Content-Type': 'application/json'}
-			responseFromUN = requests.put(put_url % (nffg.id), data=nffg.getJSON(), headers=headers)
-		except (requests.ConnectionError):
-			LOG.error("Cannot contact the universal node orchestrator at '%s'",put_url % (nffg.id))
-			raise ServerError("Cannot contact the universal node orchestrator at "+put_url)
-	
-		LOG.debug("Status code received from the universal node orchestrator: %s",responseFromUN.status_code)
-	
-		if responseFromUN.status_code == 201:
-			LOG.info("New VNFs and flows properly deployed on the universal node")	
-		else:
-			LOG.error("Something went wrong while deploying the new VNFs and flows on the universal node")	
-			raise ServerError("Something went wrong while deploying the new VNFs and flows on the universal node")
-
-
-def removeFromUniversalNode(rulesToBeRemoved,vnfsToBeRemoved):
-	'''
-	Removes rules from the universal node
-	'''
-	
-	if len(vnfsToBeRemoved) != 0:
-		LOG.warning("Required to remove '%d' VNFs",len(vnfsToBeRemoved))
-		LOG.warning("Due to implementation choices of the universal node orchestrator, such VNFs will be only removed if no flow-rule will refer to their ports")
-	
-	if len(rulesToBeRemoved) == 0:
-		# No message is sent to the orchestrator
-		return
-	
-	LOG.info("Removing %d rules from the universal node",len(rulesToBeRemoved))
-	LOG.warning("Due to implementation choices of the universal node orchestrator, the VNFs whose all ports will no longer used in any deployed flow will be removed (undeployed)")
-	
-	delete_url = unOrchestratorURL + "/NF-FG/%s/%s"
-	for rule in rulesToBeRemoved:
-		LOG.debug("Going to remove rule with ID: %s",rule)	
-		if debug_mode is False:
-			try:
-				responseFromUN = requests.delete(delete_url % (graph_id,rule))
-			except (requests.ConnectionError):
-				LOG.error("Cannot contact the universal node orchestrator at '%s'",unOrchestratorURL)	
-				raise ServerError("Cannot contact the universal node orchestrator at " +unOrchestratorURL)
-					
-			LOG.debug("Status code: %s",responseFromUN.status_code)
 			
-			if responseFromUN.status_code == 204:
-				LOG.info("Rule '%s' has been properly deleted",rule)
-			else:
-				LOG.error("Something went wrong while deploying the new VNFs and flows on the universal node")	
-				raise ServerError("Something went wrong while deploying the new VNFs and flows on the universal node")
+	graph_url = unOrchestratorURL + "/NF-FG/%s"		
+	
+	try:
+		if len(nffg.flow_rules) + len(nffg.vnfs) + len(nffg.end_points) == 0:
+			LOG.debug("No elements have to be sent to the universal node orchestrator...sending a delete request")
+			LOG.debug("DELETE url: "+ graph_url % (nffg.id))
+			if debug_mode is False:
+				responseFromUN = requests.delete(graph_url % (nffg.id))
+				LOG.debug("Status code received from the universal node orchestrator: %s",responseFromUN.status_code)
+				# TODO: check the correct code
+				if responseFromUN.status_code == 201: 
+					LOG.info("Graph successfully deleted")	
+				else:
+					LOG.error("Something went wrong while deleting the graph on the universal node")	
+					raise ServerError("Something went wrong while deleting the graph on the universal node")
+		else:
+			LOG.debug("Graph that is going to be sent to the universal node orchestrator:")
+			LOG.debug("%s",nffg.getJSON())
+			LOG.debug("PUT url: "+ graph_url % (nffg.id))
+			
+			if debug_mode is False:
+				headers = {'Content-Type': 'application/json'}
+				responseFromUN = requests.put(graph_url % (nffg.id), data=nffg.getJSON(), headers=headers)
+				LOG.debug("Status code received from the universal node orchestrator: %s",responseFromUN.status_code)
+			
+				if responseFromUN.status_code == 201:
+					LOG.info("New VNFs and flows properly deployed on the universal node")	
+				else:
+					LOG.error("Something went wrong while deploying the new VNFs and flows on the universal node")	
+					raise ServerError("Something went wrong while deploying the new VNFs and flows on the universal node")
+				
+	except (requests.ConnectionError):
+		LOG.error("Cannot contact the universal node orchestrator at '%s'",graph_url % (nffg.id))
+		raise ServerError("Cannot contact the universal node orchestrator at "+graph_url)
 			
 '''
 	Methods used in the initialization phase of the virtualizer
@@ -995,10 +965,9 @@ def virtualizerInit():
 	
 	LOG.info("Initializing the virtualizer...")
 	
-	
 	if not readConfigurationFile():
 		return False
-	
+
 	v = Virtualizer(id=constants.INFRASTRUCTURE_ID, name=constants.INFRASTRUCTURE_NAME)				
 	v.nodes.add(
 		Infra_node(
@@ -1006,9 +975,9 @@ def virtualizerInit():
 			name=constants.NODE_NAME,
 			type=constants.NODE_TYPE,
 			resources=Software_resource(
-				cpu='0',
-				mem='0',
-				storage='0'
+				cpu=cpu,
+				mem=memory,
+				storage=storage
 			)
 		)
 	)
@@ -1023,25 +992,8 @@ def virtualizerInit():
 		#resp.status = falcon.HTTP_500
 		return False
 	root = tree.getroot()
-
-	resources = root.find('resources')
-	cpu = resources.find('cpu')
-	memory = resources.find('memory')
-	storage = resources.find('storage')
-	
-	thecpu = cpu.attrib
-	thememory = memory.attrib
-	thestorage = storage.attrib
-	
-	LOG.debug("CPU: %s", thecpu['amount'])
-	LOG.debug("memory: %s %s", thememory['amount'],thememory['unit'])
-	LOG.debug("storage: %s %s", thestorage['amount'],thestorage['unit'])
 	
 	universal_node = v.nodes.node[constants.NODE_ID]
-	resources = universal_node.resources
-	resources.cpu.set_value(thecpu['amount'] + " VCPU")
-	resources.mem.set_value(thememory['amount'] + " " + thememory['unit'])
-	resources.storage.set_value(thestorage['amount'] + " " + thestorage['unit'])
 	
 	#Read information related to the physical ports and add it to the
 	#virtualizer representation
@@ -1071,14 +1023,14 @@ def virtualizerInit():
 	
 	if not contactNameResolver():
 		return False
-	
+	"""
 	#Initizialize the file describing the deployed graph as a json
 	flowRules=[]
 	vnfs=[]
 	endpoints = []
 	if not toBeAddedToFile(flowRules,vnfs,endpoints,constants.GRAPH_FILE):
 		return False
-	
+	"""
 	LOG.info("The virtualizer has been initialized")
 	return True
 
@@ -1091,6 +1043,7 @@ def readConfigurationFile():
 	global unOrchestratorIP
 	global unOrchestratorURL
 	global infrastructureFile
+	global cpu, memory, storage
 	
 	LOG.info("Reading configuration file: '%s'",constants.CONFIGURATION_FILE)
 	config = ConfigParser.ConfigParser()
@@ -1112,14 +1065,25 @@ def readConfigurationFile():
 		LOG.error("Option 'UNOrchestratorAddress' or option 'UNOrchestratorPort' not found in section 'connections' of file '%s'",constants.CONFIGURATION_FILE)
 		return False
 	
+	if 'resources' not in sections:
+		LOG.error("Wrong file '%s'. It does not include the section 'resources' :(",constants.CONFIGURATION_FILE)
+		return False
+	try:
+		cpu = config.get("resources","cpu")
+		memory = config.get("resources","memory")
+		storage = config.get("resources","storage")
+	except:
+		LOG.error("Option 'cpu' or 'memory' or 'storage' not found in section 'resources' of file '%s'",constants.CONFIGURATION_FILE)
+		return False
+	
 	if 'configuration' not in sections:
 		LOG.error("Wrong file '%s'. It does not include the section 'configuration' :(",constants.CONFIGURATION_FILE)
 		return False
 	try:
-		infrastructureFile = config.get("configuration","UNOrchestratorConfigFile")
+		infrastructureFile = config.get("configuration","PortFile")
 	except:
-		LOG.error("Option 'UNOrchestratorConfigFile' not found in section 'configuration' of file '%s'",constants.CONFIGURATION_FILE)
-		return False	
+		LOG.error("Option 'PortFile' not found in section 'configuration' of file '%s'",constants.CONFIGURATION_FILE)
+		return False
 	try:
 		LogLevel = config.get("configuration","LogLevel")	
 		if LogLevel == 'debug':
@@ -1141,6 +1105,10 @@ def readConfigurationFile():
 	except:
 		LOG.warning("Option 'LogLevel' not found in section 'configuration' of file '%s'",constants.CONFIGURATION_FILE)
 		LOG.warning("Log level is set on 'INFO'")
+		
+	LOG.debug("CPU: %s", cpu)
+	LOG.debug("memory: %s", memory)
+	LOG.debug("storage: %s", storage)
 	
 	LOG.info("Url used to contact the name-resolver: %s",nameResolverURL)
 	LOG.info("Url used to contact the universal node orchestrator: %s",unOrchestratorURL)
@@ -1244,7 +1212,7 @@ def contactNameResolver():
 	
 	LOG.info("Interaction with the name-resolver terminated")
 	return True
-
+"""
 def toBeAddedToFile(flowRules,vnfs,endpoints,fileName):
 	'''
 	Given a set (potentially empty) of flow rules and NFs, write it in a file respecting the syntax expected by the Univeral Node
@@ -1269,7 +1237,7 @@ def toBeAddedToFile(flowRules,vnfs,endpoints,fileName):
 		return False
 		
 	return True
-
+"""
 '''
 	The following code is executed by guicorn at the boot of the virtualizer
 '''
@@ -1295,6 +1263,9 @@ graph_name = "NF-FG"
 tcp_port = 10000
 unify_port_mapping = OrderedDict()
 unify_monitoring = ""
+cpu = ""
+memory = ""
+storage = ""
 
 # if debug_mode is True no interactions will be made with the UN
 debug_mode = False

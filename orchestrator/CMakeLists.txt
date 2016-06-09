@@ -35,6 +35,16 @@ IF(${LOGGING_LEVEL_INDEX} EQUAL 4)
 ENDIF()
 # End of the rather complicated CMake code for setting the logging level
 
+OPTION(
+	DETAILED_LOGS
+	"Turn on to have a detailed logs"
+	OFF
+)
+
+IF(DETAILED_LOGS)
+	ADD_DEFINITIONS(-DDETAILED_LOGS)
+ENDIF(DETAILED_LOGS)
+
 # Rather complicated CMake code for selecting the virtual switch implementation
 SET(VSWITCH_IMPLEMENTATION "OVS-OVSDB" CACHE STRING "vSwitch implementation: XDPD, OVS-OFCONFIG, OVS-DPDK, OVS-OVSDB, ERFS")
 SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS-OFCONFIG" "OVS-DPDK" "OVS-OVSDB" "ERFS") #Add here other implementations
@@ -233,8 +243,6 @@ SET(SOURCES1
 	node_resource_manager/graph_manager/lsi.cc
 	node_resource_manager/graph_manager/virtual_link.h
 	node_resource_manager/graph_manager/virtual_link.cc
-	node_resource_manager/graph_manager/fileParser.h
-	node_resource_manager/graph_manager/fileParser.cc
 
 	node_resource_manager/graph/match.h
 	node_resource_manager/graph/match.cc
@@ -263,14 +271,18 @@ SET(SOURCES1
 	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.cc
 	node_resource_manager/graph/high_level_graph/high_level_output_action_port.h
 	node_resource_manager/graph/high_level_graph/high_level_output_action_port.cc
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_gre.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_gre.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_internal.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_internal.cc
 	node_resource_manager/graph/high_level_graph/high_level_rule.h
 	node_resource_manager/graph/high_level_graph/high_level_rule.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_gre.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_gre.h
+	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_internal.cc
+	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_internal.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_vlan.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_vlan.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_vnf.cc
@@ -313,6 +325,9 @@ SET(SOURCES1
 	node_resource_manager/database_manager/SQLite/SQLiteManager_constants.h
 	node_resource_manager/database_manager/SQLite/INIReader.cpp
 	node_resource_manager/database_manager/SQLite/ini.c
+
+	node_resource_manager/security_manager/security_manager.cc
+	node_resource_manager/security_manager/security_manager.h
 
 	utils/logger.h
 	utils/logger.c

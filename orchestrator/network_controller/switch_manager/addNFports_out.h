@@ -22,9 +22,9 @@ friend class GraphManager;
 private:
 
 	/**
-	*	@brief: name of the network functions whose ports have been connected to the lsi
+	*	@brief: id of the network functions whose ports have been connected to the lsi
 	*/
-	string nf_name;
+	string nf_id;
 
 	/**
 	*	@brief: map of ports name, identifier within the lsi
@@ -45,9 +45,9 @@ private:
 
 public:
 
-	string getNFname()
+	string getNfId()
 	{
-		return nf_name;
+		return nf_id;
 	}
 
 	map<string, unsigned int> getPorts()
@@ -60,8 +60,8 @@ public:
 		return ports_name_on_switch;
 	}
 
-	AddNFportsOut(string nf_name,map<string, unsigned int> ports, list<string> ports_name_on_switch)
-		: nf_name(nf_name), ports(ports.begin(),ports.end()), ports_name_on_switch(ports_name_on_switch.begin(),ports_name_on_switch.end())
+	AddNFportsOut(string nf_id,map<string, unsigned int> ports, list<string> ports_name_on_switch)
+		: nf_id(nf_id), ports(ports.begin(),ports.end()), ports_name_on_switch(ports_name_on_switch.begin(),ports_name_on_switch.end())
 	{
 	}
 

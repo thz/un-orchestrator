@@ -33,7 +33,7 @@ class er_ddclient:
 
     def receive_data(self, conn):
         while True:
-            # wiat for message
+            # wait for message
             message = conn.get()
 
             start_time = time.time()

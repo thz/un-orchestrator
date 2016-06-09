@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# start UN
+
+#start name-resolver
+sudo ./start_name_resolver &
+
+#start orchestrator
+# copy orchestartor config file
+cp orchestrator_config_er_demo.ini ../../../orchestrator/config/
+# copy UN config file
+cp universal-node-er-demo.xml ../../../orchestrator/config/
+
+cd ../../../orchestrator/
+sudo ./node-orchestrator --d ./config/orchestrator_config_er_demo.ini &
+
+#start virtualizer
+cd ../virtualizer
+sudo gunicorn -b 0.0.0.0:9090 virtualizer:api --timeout 60 &
+
+echo 'wait for virtualizer to start'
+sleep 3
+
+# start the Elastic Router NFFG (xml virtualizer format)
+cd ../use-cases/elastic_router/elastic_router_files/nffg_files
+curl -i -d "@er_nffg_virtualizer5_v4.xml" -X POST http://localhost:9090/edit-config
+
+

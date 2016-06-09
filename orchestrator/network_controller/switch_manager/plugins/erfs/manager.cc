@@ -13,7 +13,7 @@ ERFSManager::~ERFSManager()
 
 void ERFSManager::checkPhysicalInterfaces(set<CheckPhysicalPortsIn> cppi)
 { // SwitchManager implementation
-	//logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "checkPhysicalInterfaces(dpid: %" PRIu64 " NF:%s NFType:%d)", anpi.getDpid(), anpi.getNFname().c_str(), anpi.getNFtype());
+	//logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "checkPhysicalInterfaces(dpid: %" PRIu64 " NF:%s NFType:%d)", anpi.getDpid(), anpi.getNfId().c_str(), anpi.getNFtype());
 }
 
 CreateLsiOut *ERFSManager::createLsi(CreateLsiIn cli)
@@ -94,9 +94,9 @@ AddNFportsOut *ERFSManager::addNFPorts(AddNFportsIn anpi)
     typedef map<string,unsigned int> PortsNameIdMap;
     AddNFportsOut *anpo = NULL;
     uint64_t dpid = anpi.getDpid();
-    string nf = anpi.getNFname();
+    string nf = anpi.getNfId();
     nf_t nf_type = anpi.getNFtype();
-    logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "addNFPorts(dpid: %" PRIu64 " NF:%s NFType:%d)", anpi.getDpid(), anpi.getNFname().c_str(), anpi.getNFtype());
+    logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "addNFPorts(dpid: %" PRIu64 " NF id:%s NFType:%d)", anpi.getDpid(), anpi.getNfId().c_str(), anpi.getNFtype());
     list<struct nf_port_info> nfs_ports = anpi.getNetworkFunctionsPorts();
     list<string> port_name_on_switch;
     PortsNameIdMap nf_ports_ids;
@@ -120,7 +120,7 @@ AddNFportsOut *ERFSManager::addNFPorts(AddNFportsIn anpi)
         pid << port_id;
         port_name_on_switch.push_back(pid.str());
     }
-    anpo = new AddNFportsOut(anpi.getNFname(), nf_ports_ids, port_name_on_switch);
+    anpo = new AddNFportsOut(anpi.getNfId(), nf_ports_ids, port_name_on_switch);
     return anpo;
 }
 

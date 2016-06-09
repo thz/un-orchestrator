@@ -203,3 +203,9 @@ void *Controller::loop(void *param)
 
 	return NULL;
 }
+
+string Controller::getControllerPort()
+{
+	return controllerPort;
+}
+

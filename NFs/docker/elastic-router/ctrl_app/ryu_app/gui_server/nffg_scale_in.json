@@ -1,0 +1,73 @@
+{
+  "nodes": [
+    {
+      "id": "ctrl",
+      "label": "ER Ctrl App",
+      "x": 4,
+      "y": 2,
+      "size": 3
+    },
+    {
+      "id": "ovs1",
+      "label": "ER Data Plane",
+      "x": 4,
+      "y": 4,
+      "size": 3
+    },
+    {
+      "id": "sap1",
+      "label": "SAP1",
+      "x": 3,
+      "y": 3,
+      "size": 2
+    },
+    {
+      "id": "sap2",
+      "label": "SAP2",
+      "x": 3,
+      "y": 5,
+      "size": 2
+    },
+    {
+      "id": "sap3",
+      "label": "SAP3",
+      "x": 5,
+      "y": 5,
+      "size": 2
+    },
+    {
+      "id": "sap4",
+      "label": "SAP4",
+      "x": 5,
+      "y": 3,
+      "size": 2
+    }
+  ],
+  "edges": [
+    {
+      "id": "e0",
+      "source": "ctrl",
+      "target": "ovs1"
+    },
+    {
+      "id": "e1",
+      "source": "sap1",
+      "target": "ovs1"
+    },
+    {
+      "id": "e2",
+      "source": "sap2",
+      "target": "ovs1"
+    },
+    {
+      "id": "e3",
+      "source": "sap3",
+      "target": "ovs1"
+    },
+    {
+      "id": "e4",
+      "source": "sap4",
+      "target": "ovs1"
+    }
+  ]
+}

@@ -30,9 +30,9 @@ private:
 	uint64_t dpid;
 
 	/**
-	*	@brief: name of the network functions whose ports must be connected to the lsi
+	*	@brief: id of the network functions whose ports must be connected to the lsi
 	*/
-	string nf_name;
+	string nf_id;
 
 	/**
 	*	@brief: type of the network function to be connected to the lsi
@@ -40,13 +40,14 @@ private:
 	nf_t type;
 
 	/**
-	*	@brief: list of ports of the network function to be attached to the lsi
+	*	@brief: list of ports of the network function to be attached to the lsi.
+	*			Each element of the list is in the form "port name, port type"
 	*/
 	list<struct nf_port_info> nf_ports;
 
 public:
-	AddNFportsIn(uint64_t dpid, string nf_name, nf_t type, list<struct nf_port_info> nf_ports)
-		: dpid(dpid), nf_name(nf_name), type(type), nf_ports(nf_ports)
+	AddNFportsIn(uint64_t dpid, string nf_id, nf_t type, list<struct nf_port_info> nf_ports)
+		: dpid(dpid), nf_id(nf_id), type(type), nf_ports(nf_ports)
 	{
 	}
 
@@ -55,9 +56,9 @@ public:
 		return dpid;
 	}
 
-	string getNFname()
+	string getNfId()
 	{
-		return nf_name;
+		return nf_id;
 	}
 
 	nf_t getNFtype()
