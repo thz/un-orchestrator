@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <style type="text/css">
+          #container {
+            max-width: 400px;
+            height: 400px;
+            margin: auto;
+          }
+         </style>
+        <script src="sigma.min.js"></script>
+        <script src="sigma.parsers.json.min.js"></script>
+        <script src="sigma.layout.forceAtlas2.min.js"></script>
+        <script type="text/javascript">
+            var settings = {
+                linLogMode: false,
+                outboundAttractionDistribution: false,
+                adjustSizes: true,
+                edgeWeightInfluence: 0,
+                scalingRatio: 1,
+                strongGravityMode: true,
+                gravity: 1,
+                slowDown: 10,
+                barnesHutOptimize: false,
+                barnesHutTheta: 0.5,
+                startingIterations: 1,
+                iterationsPerRender: 1
+            };
+            function parse_sigma(data) {
+                sigma.parsers.json(data, s,
+                function() {
+                    s.refresh();
+                    s.startForceAtlas2(settings);
+                    }
+                 )
+             }
+            function WebSocketTest() {
+                var messageContainer = document.getElementById("messages");
+                if ("WebSocket" in window) {
+                    messageContainer.innerHTML = "WebSocket is supported by your Browser!";
+                    var ws = new WebSocket("ws://{{host_ip}}:{{host_port}}/ws");
+                    ws.onopen = function() {
+                        messageContainer.innerHTML = "Connection is open"
+                        // ws.send("Message to send");
+                    };
+                    ws.onmessage = function (evt) {
+                        var received_msg = evt.data;
+                        messageContainer.innerHTML = "Message is received1: " + received_msg;
+                        parse_sigma(evt.data);
+                        messageContainer.innerHTML = "Message is received2: " + received_msg;
+                    };
+                    ws.onclose = function() {
+                        messageContainer.innerHTML = "Connection is closed...";
+                    };
+                } else {
+                    messageContainer.innerHTML = "WebSocket NOT supported by your Browser!";
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <a href="javascript:WebSocketTest()">Run WebSocket</a>
+        <div id="messages" style="height:200px;background:black;color:white;"></div>
+
+        <div id="container"></div>
+        <script type="text/javascript">
+            // these are just some preliminary settings
+            var g = {
+                nodes: [],
+                edges: []
+            };
+            // Create new Sigma instance in graph-container div (use your div name here)
+               s = new sigma({
+               graph: g,
+               container: 'container',
+               renderer: {
+                container: document.getElementById('container'),
+                type: 'canvas'
+               },
+               settings: {
+                minNodeSize: 8,
+                maxNodeSize: 16,
+                defaultNodeColor: '#ec5148'
+               }
+               });
+            function parse_sigma2(data) {
+                sigma.parsers.json(data,
+                s,
+                function() {
+                    s.refresh();
+                  }
+                 );
+            }
+        </script>
+        <script type="text/javascript">
+            WebSocketTest();
+        </script>
+
+    </body>
+</html>

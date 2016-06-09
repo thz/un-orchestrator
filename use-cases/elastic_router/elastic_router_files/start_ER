@@ -23,6 +23,6 @@ sleep 3
 
 # start the Elastic Router NFFG (xml virtualizer format)
 cd ../use-cases/elastic_router/elastic_router_files/nffg_files
-curl -i -d "@er_nffg_virtualizer5_v3.xml" -X POST http://localhost:9090/edit-config
+curl -i -d "@er_nffg_virtualizer5_v4.xml" -X POST http://localhost:9090/edit-config
 
 

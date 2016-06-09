@@ -23,6 +23,7 @@ class er_rest_api():
         self.log = logging.getLogger('rest_api_logger')
         self.log.setLevel(logging.DEBUG)
 
+
         self.function_dict = {
             'in': self.scale_in,
             'out': self.scale_out,
@@ -61,8 +62,8 @@ class er_rest_api():
     def ping(self):
         return 'pong'
 
-
     def start_rest_server(self, monitor_instance, ER_instance, host='0.0.0.0', port=5000):
+
         # monitoring class
         self.er_monitor = monitor_instance
         # Elastic Router class
@@ -81,5 +82,6 @@ rest_api = er_rest_api()
 class rest_calls(Resource):
     def get(self, scale_arg):
         return rest_api.function_dict[scale_arg]()
+
 
 api.add_resource(rest_calls, '/scale/<scale_arg>')
