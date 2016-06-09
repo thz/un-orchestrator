@@ -34,9 +34,9 @@
 				</port>
 			</ports>
 			<resources>
-				<cpu>1 VCPU</cpu>
-				<mem>1 GB</mem>
-				<storage>1 GB</storage>
+				<cpu>10</cpu>
+				<mem>32 GB</mem>
+				<storage>5 TB</storage>
 			</resources>
 			<NF_instances>
 				<node>
@@ -52,7 +52,7 @@
 								<orchestrator>172.17.0.1:9090</orchestrator>
 							</control>
 							<addresses>
-								<l4>{'tcp/5000': ('127.0.0.1', 10000)}</l4>
+								<l4>{'tcp/8888': ('127.0.0.1', 10001), 'tcp/5000': ('127.0.0.1', 10000)}</l4>
 							</addresses>
 						</port>
 						<port>
@@ -68,10 +68,6 @@
 							</addresses>
 						</port>
 					</ports>
-					<metadata>
-						<key>measure</key>
-						<value>test measure ctrl</value>
-					</metadata>
 				</node>
 				<node>
 					<id>2</id>
@@ -84,7 +80,7 @@
 							<port_type>port-sap</port_type>
 							<sap>INTERNET</sap>
 							<addresses>
-								<l4>{'tcp/22': ('127.0.0.1', 10006)}</l4>
+								<l4>{'tcp/22': ('127.0.0.1', 10007)}</l4>
 							</addresses>
 						</port>
 						<port>
@@ -124,21 +120,7 @@
 					</ports>
 					<metadata>
 						<key>measure</key>
-						<value> measurements {
-    m1 = cpu(vnf = 2);
-    m2 = mem(vnf = 2);
-    }
-    zones {
-    z1 = (AVG(val = m1, max_age = &quot;5 minute&quot;) &amp;lt; 0.5);
-    z2 = (AVG(val = m2, max_age = &quot;5 minute&quot;) &amp;gt; 0.5);
-    }
-    actions {z1-&gt;z2 = Publish(topic = &quot;alarms&quot;, message = &quot;z1 to z2&quot;); Notify(target = &quot;alarms&quot;, message = &quot;z1 to z2&quot;);
-    z2-&gt;z1 = Publish(topic = &quot;alarms&quot;, message = &quot;z2 to z&quot;);
-    -&gt;z1 = Publish(topic = &quot;alarms&quot;, message = &quot;entered z1&quot;);
-    z1-&gt; = Publish(topic = &quot;alarms&quot;, message = &quot;left z1&quot;);
-    z1 = Publish(topic = &quot;alarms&quot;, message = &quot;in z1&quot;);
-    z2 = Publish(topic = &quot;alarms&quot;, message = &quot;in z2&quot;);
-    }</value>
+						<value> measurements {m1 = cpu(vnf = 2);m2 = mem(vnf = 2);}zones {z1 = (AVG(val = m1, max_age = &quot;5 minute&quot;) &lt; 0.5);z2 = (AVG(val = m2, max_age = &quot;5 minute&quot;) &gt; 0.5);}actions {z1-&gt;z2 = Publish(topic = &quot;alarms&quot;, message = &quot;z1 to z2&quot;); Notify(target = &quot;alarms&quot;, message = &quot;z1 to z2&quot;);z2-&gt;z1 = Publish(topic = &quot;alarms&quot;, message = &quot;z2 to z&quot;);-&gt;z1 = Publish(topic = &quot;alarms&quot;, message = &quot;entered z1&quot;);z1-&gt; = Publish(topic = &quot;alarms&quot;, message = &quot;left z1&quot;);z1 = Publish(topic = &quot;alarms&quot;, message = &quot;in z1&quot;);z2 = Publish(topic = &quot;alarms&quot;, message = &quot;in z2&quot;);}</value>
 					</metadata>
 					<metadata>
 						<key>variable:CONTROLLER</key>

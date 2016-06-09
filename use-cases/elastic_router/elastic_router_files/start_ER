@@ -9,7 +9,7 @@ sudo ./start_name_resolver &
 # copy orchestartor config file
 cp orchestrator_config_er_demo.ini ../../../orchestrator/config/
 # copy UN config file
-cp universal-node-er-demo.xml ../../../orchestrator/config/
+#cp universal-node-er-demo.xml ../../../orchestrator/config/
 
 cd ../../../orchestrator/
 sudo ./node-orchestrator --d ./config/orchestrator_config_er_demo.ini &
