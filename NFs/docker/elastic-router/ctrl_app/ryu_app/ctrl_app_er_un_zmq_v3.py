@@ -103,7 +103,8 @@ class ElasticRouter(app_manager.RyuApp):
         # clear parsed nffg
         copyfile('gui_server/empty.json', 'gui_server/parsed_nffg.json')
         # start gui web server at port 8888
-        self.gui_server = web_server(host_port)
+        # TODO start gui server here
+        ##self.gui_server = web_server(host_port)
 
         # start rest api to easily scale in/out
         self.rest_api_ = er_rest_api.rest_api.start_rest_server(self.monitorApp, self)
