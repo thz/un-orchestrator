@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT(node-orchestrator)
 
@@ -437,6 +437,7 @@ ELSE()
 ENDIF(ENABLE_RESOURCE_MANAGER)
 
 INCLUDE_DIRECTORIES (
+	${CMAKE_BINARY_DIR}/externals/include/
 	/usr/include/boost
 	/usr/include/libxml2
 )
@@ -448,6 +449,7 @@ ADD_EXECUTABLE(
 )
 
 LINK_DIRECTORIES(
+	${CMAKE_BINARY_DIR}/externals/lib/
 	/usr/lib/
 	/usr/local/lib/
 	/usr/x86_64-linux-gnu/
@@ -525,3 +527,14 @@ IF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) 
 	message(FATAL_ERROR "At least one execution environmnet must be enabled")
 ENDIF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) AND (NOT ENABLE_KVM) )
 
+
+# json-spirit: extract, build, install (locally in build-dir):
+include (ExternalProject)
+ExternalProject_Add(
+	JSON_Spirit
+	URL ${CMAKE_SOURCE_DIR}/../contrib/json-spirit.zip
+	URL_MD5 728c247d012bb999dca38629bb4649aa
+	CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/externals
+	# unfortunately json-spirit lacks a top-level cmakelists.txt:
+	PATCH_COMMAND printf "CMAKE_MINIMUM_REQUIRED(VERSION 2.8)\\nADD_SUBDIRECTORY(build)\\n" > CMakeLists.txt
+)
