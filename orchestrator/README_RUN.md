@@ -25,12 +25,8 @@ to configure/test the un-orchestrator.
 
   * [config/default-config.ini](config/default-config.ini): 
     configuration file for the un-orchestrator. It allows to specify information such 
-    as the TCP port used by the REST server, the file describing the physical 
-    ports of the Universal Node, and more;
-  * [config/universal-node-example.xml](config/universal-node-example.xml): 
-    file describing the physical ports to be handled by the 
-    un-orchestrator, as well as the amount of CPU, memory and storage provided 
-    to the Universal Node;
+    as the TCP port used by the REST server, the list of physical interfaces of 
+    the Universal Node, and more;
   * [config/simple_passthrough_nffg.json](config/simple_passthrough_nffg.json): 
     simple graph that implements a simple passthrough function, i.e., traffic is 
     received from a first physical port and sent out from a second physical port, 
