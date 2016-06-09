@@ -29,12 +29,15 @@ from er_utils import *
 from er_monitor_zmq import *
 from er_ddclient import er_ddclient
 import er_rest_api
-
+from shutil import copyfile
+from gui_server.gui_server import web_server
 
 # this version must use xml based nffg
 os.environ["NFFG_FORMAT"] = "xml"
 import er_nffg
 
+from eventlet.green import zmq
+CTX = zmq.Context(1)
 
 class ElasticRouter(app_manager.RyuApp):
 
@@ -73,9 +76,6 @@ class ElasticRouter(app_manager.RyuApp):
         # get config file with routing table
         self.config = import_json_file(self.CONFIG_FILE)
 
-        self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
-        self.parse_nffg(self.nffg)
-
         self.VNFs_to_be_deleted = []
 
         self.logger.debug('DP instances: {0}'.format(self.DP_instances))
@@ -89,8 +89,32 @@ class ElasticRouter(app_manager.RyuApp):
         # start DD client
         self.zmq_ = er_ddclient(self.monitorApp, self)
 
+        # parse the nffg from the Cf-Or
+        self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
+
+        # start gui web server to visualize ER topology as seen by ctrl app
+        # use this pipe to communicate to the gui_server
+        host_port = er_nffg.get_mapped_port(self.nffg, 'ctrl', 8888)
+
+        # open zmq bus to send updated nffg's to the gui
+        #CTX = zmq.Context(1)
+        self.gui_sender = zmq.Socket(CTX, zmq.PUSH)
+        self.gui_sender.connect('ipc:///tmp/ws_message')
+        # clear parsed nffg
+        copyfile('gui_server/empty.json', 'gui_server/parsed_nffg.json')
+        # start gui web server at port 8888
+        # TODO start gui server here
+        ##self.gui_server = web_server(host_port)
+
         # start rest api to easily scale in/out
         self.rest_api_ = er_rest_api.rest_api.start_rest_server(self.monitorApp, self)
+
+        # parse nffg to start Ctrl app
+        self.parse_nffg(self.nffg)
+
+        #for i in range(100):
+        #    self.gui_sender.send_string('test{0}'.format(i))
+        #    time.sleep(1)
 
 
     def parse_nffg(self, nffg):
@@ -112,6 +136,11 @@ class ElasticRouter(app_manager.RyuApp):
                 self.DPIDtoDP.pop(self.DP_instances[DP_name].datapath_id)
                 self.DP_instances.pop(DP_name)
                 self.logger.info('Removed DP: {0}'.format(DP_name))
+
+        # set parsed nffg
+        copyfile('gui_server/nffg_scale_in.json', 'gui_server/parsed_nffg.json')
+        # send parsed nffg to gui
+        self.gui_sender.send_string('nffg_scale_in.json')
 
     # monitor stats and trigger scaling
     def _monitor(self):
@@ -297,6 +326,11 @@ class ElasticRouter(app_manager.RyuApp):
         # first remove all vnfs and flowentries without create attribute
         er_nffg.send_nffg(self.REST_Cf_Or, (nffg_intermediate))
 
+        # set parsed nffg
+        copyfile('gui_server/nffg_scale_{0}.json'.format(direction), 'gui_server/parsed_nffg.json')
+        # send parsed nffg to gui
+        self.gui_sender.send_string('nffg_scale_{0}.json'.format(direction))
+
         # get new updated NFFG
         #self.nffg_json = self.get_nffg_json()
 
@@ -385,6 +419,8 @@ class ElasticRouter(app_manager.RyuApp):
         #self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
 
         self.logger.info('scaling finished!')
+
+
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):

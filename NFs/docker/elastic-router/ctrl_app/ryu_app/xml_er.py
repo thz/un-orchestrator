@@ -5,6 +5,7 @@ from er_utils import *
 from operator import itemgetter
 from itertools import groupby
 import xml.etree.ElementTree as ET
+import re
 
 import logging
 nffg_log = logging.getLogger(__name__)
@@ -34,6 +35,21 @@ def get_UN_node(nffg):
             return un
 
     nffg_log.error('Universal node: {0} not found'.format(NODE_ID))
+
+def get_mapped_port(nffg_xml, vnf_name, int_port):
+    nffg = get_virtualizer_nffg(nffg_xml)
+    un = get_UN_node(nffg)
+    instances = un.NF_instances
+
+    for instance in instances:
+        if instance.name.get_value() == vnf_name:
+            # only port 0 can have l4 address
+            port = instance.ports[str(0)]
+            l4_addresses = port.addresses.l4.get_value()
+            l4_addresses_list = re.findall("'[a-z]*\/(\d*)'\s*:\s*\('[0-9.]*', (\d*)\)", l4_addresses)
+            for vnf_port, host_port in l4_addresses_list:
+                if vnf_port == str(int_port):
+                    return host_port
 
 def process_nffg(nffg_xml):
 
@@ -350,7 +366,24 @@ def add_ovs_vnf(nffg_xml, nffg_id, ovs_id, name, vnftype, numports):
     vnf.metadata.add(MetadataMetadata(key='variable:OVS_DPID', value='99{0}'.format(str(ovs_id).zfill(14))))
     vnf.metadata.add(MetadataMetadata(key='variable:CONTROLLER', value='tcp:10.0.10.100:6633'))
 
-    vnf.metadata.add(MetadataMetadata(key='measure', value='test measure {0}'.format(name)))
+    # create very long measure string without newlines included
+    measurestring = (" measurements {{"
+    "m1 = cpu(vnf = {0});"
+    "m2 = mem(vnf = {0});"
+    "}}"
+    "zones {{"
+    "z1 = (AVG(val = m1, max_age = \"5 minute\") &lt; 0.5);"
+    "z2 = (AVG(val = m2, max_age = \"5 minute\") &gt; 0.5);"
+    "}}"
+    "actions {{z1->z2 = Publish(topic = \"alarms\", message = \"z1 to z2\"); Notify(target = \"alarms\", message = \"z1 to z2\");"
+    "z2->z1 = Publish(topic = \"alarms\", message = \"z2 to z\");"
+    "->z1 = Publish(topic = \"alarms\", message = \"entered z1\");"
+    "z1-> = Publish(topic = \"alarms\", message = \"left z1\");"
+    "z1 = Publish(topic = \"alarms\", message = \"in z1\");"
+    "z2 = Publish(topic = \"alarms\", message = \"in z2\");"
+    "}}").format(nffg_id)
+
+    vnf.metadata.add(MetadataMetadata(key='measure', value=measurestring))
 
     vnf.set_operation(operation="create",  recursive=False)
     un.NF_instances.add(vnf)
