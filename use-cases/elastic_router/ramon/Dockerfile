@@ -58,6 +58,7 @@ ENV RAMON_CUTOFF=90
 # the overload risk
 WORKDIR /ramon/
 CMD ./ratemon_client.py -k ${DOUBLEDECKER_KEYS} \
+            -d ${DEALER_URL} \
             ${name} \
             ${NO_HELLO} \
             -p ${ramon_port} \
