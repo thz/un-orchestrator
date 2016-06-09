@@ -5,6 +5,7 @@ from er_utils import *
 from operator import itemgetter
 from itertools import groupby
 import xml.etree.ElementTree as ET
+import re
 
 import logging
 nffg_log = logging.getLogger(__name__)
@@ -34,6 +35,21 @@ def get_UN_node(nffg):
             return un
 
     nffg_log.error('Universal node: {0} not found'.format(NODE_ID))
+
+def get_mapped_port(nffg_xml, vnf_name, int_port):
+    nffg = get_virtualizer_nffg(nffg_xml)
+    un = get_UN_node(nffg)
+    instances = un.NF_instances
+
+    for instance in instances:
+        if instance.name.get_value() == vnf_name:
+            # only port 0 can have l4 address
+            port = instance.ports[str(0)]
+            l4_addresses = port.addresses.l4.get_value()
+            l4_addresses_list = re.findall("'[a-z]*\/(\d*)'\s*:\s*\('[0-9.]*', (\d*)\)", l4_addresses)
+            for vnf_port, host_port in l4_addresses_list:
+                if vnf_port == str(int_port):
+                    return host_port
 
 def process_nffg(nffg_xml):
 

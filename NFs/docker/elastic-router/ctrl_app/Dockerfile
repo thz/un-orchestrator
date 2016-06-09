@@ -35,6 +35,7 @@ RUN pip install jsonrpcserver
 RUN pip install PyNaCl
 RUN pip install gipc
 RUN pip install future
+RUN pip install tornado
 RUN wget https://github.com/acreo/DoubleDecker-py/archive/master.tar.gz -O dd.tar.gz
 RUN tar xzf dd.tar.gz && rm dd.tar.gz
 WORKDIR /root/DoubleDecker-py-master/
