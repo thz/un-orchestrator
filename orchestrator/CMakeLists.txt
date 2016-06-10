@@ -444,6 +444,15 @@ INCLUDE_DIRECTORIES (
 	/usr/include/libxml2
 )
 
+LINK_DIRECTORIES(
+	${CMAKE_BINARY_DIR}/externals/lib/
+	/usr/lib/
+	/usr/local/lib/
+	/usr/x86_64-linux-gnu/
+	/usr/lib/x86_64-linux-gnu/
+	/usr/lib/python2.7/config-x86_64-linux-gnu/
+)
+
 # Create the executable
 ADD_EXECUTABLE(
 	node-orchestrator
@@ -454,15 +463,6 @@ ADD_DEPENDENCIES(node-orchestrator JSON_Spirit)
 ADD_DEPENDENCIES(node-orchestrator ROFL_Common)
 ADD_DEPENDENCIES(node-orchestrator Libvirt)
 ADD_DEPENDENCIES(node-orchestrator Inih)
-
-LINK_DIRECTORIES(
-	${CMAKE_BINARY_DIR}/externals/lib/
-	/usr/lib/
-	/usr/local/lib/
-	/usr/x86_64-linux-gnu/
-	/usr/lib/x86_64-linux-gnu/
-	/usr/lib/python2.7/config-x86_64-linux-gnu/
-)
 
 TARGET_LINK_LIBRARIES( node-orchestrator
 	libpthread.so
