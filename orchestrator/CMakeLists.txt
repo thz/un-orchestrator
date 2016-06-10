@@ -461,6 +461,8 @@ ADD_EXECUTABLE(
 	node-orchestrator
 	${SOURCES8}
 )
+ADD_DEPENDENCIES(node-orchestrator JSON_Spirit)
+ADD_DEPENDENCIES(node-orchestrator ROFL_Common)
 
 LINK_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/externals/lib/
@@ -473,7 +475,7 @@ LINK_DIRECTORIES(
 
 TARGET_LINK_LIBRARIES( node-orchestrator
 	libpthread.so
-	/usr/local/lib/librofl_common.so
+	librofl_common.so
 	libjson_spirit.so
 	libmicrohttpd.so
 	libboost_system.so
@@ -558,9 +560,19 @@ ENDIF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSE
 include (ExternalProject)
 ExternalProject_Add(
 	JSON_Spirit
-	URL ${CMAKE_SOURCE_DIR}/../contrib/json-spirit.zip
+	URL ${CMAKE_SOURCE_DIR}/contrib/json-spirit.zip
 	URL_MD5 728c247d012bb999dca38629bb4649aa
 	CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/externals
 	# unfortunately json-spirit lacks a top-level cmakelists.txt:
 	PATCH_COMMAND printf "CMAKE_MINIMUM_REQUIRED(VERSION 2.8)\\nADD_SUBDIRECTORY(build)\\n" > CMakeLists.txt
+)
+
+# rofl-common: extract, build, install (locally in build-dir):
+include (ExternalProject)
+ExternalProject_Add(
+	ROFL_Common
+	URL ${CMAKE_SOURCE_DIR}/contrib/rofl-common.zip
+	URL_MD5 5127f286f96010ec9e85dcf4c712599d
+	BUILD_IN_SOURCE 1
+	CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_BINARY_DIR}/externals
 )
