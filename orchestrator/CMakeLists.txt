@@ -310,8 +310,6 @@ SET(SOURCES1
 	node_resource_manager/database_manager/SQLite/SQLiteManager.h
 	node_resource_manager/database_manager/SQLite/SQLiteManager.cc
 	node_resource_manager/database_manager/SQLite/SQLiteManager_constants.h
-	node_resource_manager/database_manager/SQLite/INIReader.cpp
-	node_resource_manager/database_manager/SQLite/ini.c
 
 	node_resource_manager/security_manager/security_manager.cc
 	node_resource_manager/security_manager/security_manager.h
@@ -447,8 +445,11 @@ ADD_EXECUTABLE(
 	node-orchestrator
 	${SOURCES8}
 )
+
 ADD_DEPENDENCIES(node-orchestrator JSON_Spirit)
 ADD_DEPENDENCIES(node-orchestrator ROFL_Common)
+ADD_DEPENDENCIES(node-orchestrator Libvirt)
+ADD_DEPENDENCIES(node-orchestrator Inih)
 
 LINK_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/externals/lib/
@@ -463,6 +464,7 @@ TARGET_LINK_LIBRARIES( node-orchestrator
 	libpthread.so
 	librofl_common.so
 	libjson_spirit.so
+	libinih.a
 	libmicrohttpd.so
 	libboost_system.so
 	libxml2.so
@@ -552,4 +554,32 @@ ExternalProject_Add(
 	BUILD_IN_SOURCE 1
 	CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_BINARY_DIR}/externals
 )
+
+# libvirt - specific revision
+ExternalProject_Add(
+	Libvirt
+	GIT_REPOSITORY git://libvirt.org/libvirt.git
+	GIT_TAG f57842ecfda1ece8c59718e62464e17f75a27062
+	BUILD_IN_SOURCE 1
+	CONFIGURE_COMMAND ./autogen.sh --prefix=${CMAKE_BINARY_DIR}/externals
+	UPDATE_COMMAND ""
+	ALWAYS 0
+)
+
+# inih - https://github.com/benhoyt/inih
+ExternalProject_Add(
+	Inih
+	GIT_REPOSITORY https://github.com/benhoyt/inih
+	GIT_TAG r35
+	BUILD_IN_SOURCE 1
+	CONFIGURE_COMMAND ""
+	BUILD_COMMAND cd extra && make -f Makefile.static
+	INSTALL_COMMAND
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/externals/lib/
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/externals/include/
+	COMMAND ${CMAKE_COMMAND} -E copy extra/libinih.a ${CMAKE_BINARY_DIR}/externals/lib/
+	COMMAND ${CMAKE_COMMAND} -E copy ini.h ${CMAKE_BINARY_DIR}/externals/include/
+	COMMAND ${CMAKE_COMMAND} -E copy cpp/INIReader.h ${CMAKE_BINARY_DIR}/externals/include/
+)
+
 ENDIF(BUILD_ExternalProjects)
