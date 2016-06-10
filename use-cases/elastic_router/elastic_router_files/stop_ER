@@ -7,7 +7,8 @@ sudo pkill -f gunicorn
 
 #after kill make sure dockers are removed
 sudo docker rm -f 2_ctrl 2_ovs1 2_ovs2 2_ovs3 2_ovs4 2_ovs5
+sudo docker rm -f 2_1 2_2 2_3 2_4 2_5 2_6
 
-# make sure the LSI of the UN is deleted
+#_ make sure the LSI of the UN is deleted
 sudo ovs-vsctl del-br Bridge1
 sudo ovs-vsctl del-br Bridge2
