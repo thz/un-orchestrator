@@ -555,9 +555,12 @@ IF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) 
 	message(FATAL_ERROR "At least one execution environmnet must be enabled")
 ENDIF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) AND (NOT ENABLE_KVM) )
 
+OPTION(BUILD_ExternalProjects "Build external projects (json-spirit, rofl, ...)" ON)
+
+IF(BUILD_ExternalProjects)
+include (ExternalProject)
 
 # json-spirit: extract, build, install (locally in build-dir):
-include (ExternalProject)
 ExternalProject_Add(
 	JSON_Spirit
 	URL ${CMAKE_SOURCE_DIR}/contrib/json-spirit.zip
@@ -568,7 +571,6 @@ ExternalProject_Add(
 )
 
 # rofl-common: extract, build, install (locally in build-dir):
-include (ExternalProject)
 ExternalProject_Add(
 	ROFL_Common
 	URL ${CMAKE_SOURCE_DIR}/contrib/rofl-common.zip
@@ -576,3 +578,4 @@ ExternalProject_Add(
 	BUILD_IN_SOURCE 1
 	CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_BINARY_DIR}/externals
 )
+ENDIF(BUILD_ExternalProjects)
