@@ -218,6 +218,10 @@ MARK_AS_ADVANCED(
 	DEBUG_KVM DEBUG_OPENFLOW LOG_1024X768 RUN_NFS STARTVNF_SINGLE_THREAD IVSHMEM_RING_ALIAS
 )
 
+# relax warning-level (unfortunately):
+# some json-spirit header files have unused typedefs
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
+
 # Set source files
 SET(SOURCES1
 	node_orchestrator.cc
