@@ -576,6 +576,7 @@ ExternalProject_Add(
 	GIT_REPOSITORY https://github.com/benhoyt/inih
 	GIT_TAG r35
 	BUILD_IN_SOURCE 1
+	PATCH_COMMAND patch -p1 < ${CMAKE_SOURCE_DIR}/contrib/inih.patch
 	CONFIGURE_COMMAND ""
 	BUILD_COMMAND cd extra && make -f Makefile.static
 	INSTALL_COMMAND
