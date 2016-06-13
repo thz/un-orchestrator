@@ -586,10 +586,16 @@ ExternalProject_Add(
 )
 
 # libvirt - specific revision
-ExternalProject_Add(
-	Libvirt
-	GIT_REPOSITORY git://libvirt.org/libvirt.git
-	GIT_TAG f57842ecfda1ece8c59718e62464e17f75a27062
+ExternalProject_Add( Libvirt
+
+	## this refers to the specific revision from README_COMPILE.md
+	# GIT_REPOSITORY git://libvirt.org/libvirt.git
+	# GIT_TAG f57842ecfda1ece8c59718e62464e17f75a27062
+
+	# try a regular release instead:
+	URL http://libvirt.org/sources/libvirt-1.2.17.tar.gz
+	URL_MD5 a1f49050223be3cbd7678c32b1ee2756
+
 	BUILD_IN_SOURCE 1
 	CONFIGURE_COMMAND ./autogen.sh --prefix=${CMAKE_BINARY_DIR}/externals
 	UPDATE_COMMAND ""
@@ -599,8 +605,10 @@ ExternalProject_Add(
 # inih - https://github.com/benhoyt/inih
 ExternalProject_Add(
 	Inih
-	GIT_REPOSITORY https://github.com/benhoyt/inih
-	GIT_TAG r35
+	# GIT_REPOSITORY https://github.com/benhoyt/inih
+	# GIT_TAG r35
+	URL https://github.com/benhoyt/inih/archive/r35.zip
+	URL_MD5 e131365d1ca20cfa687e3d9284e59d39
 	BUILD_IN_SOURCE 1
 	PATCH_COMMAND patch -p1 < ${CMAKE_SOURCE_DIR}/contrib/inih.patch
 	CONFIGURE_COMMAND ""
