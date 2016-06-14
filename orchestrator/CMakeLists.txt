@@ -444,6 +444,8 @@ INCLUDE_DIRECTORIES (
 	/usr/include/libxml2
 )
 
+
+SET(CMAKE_SKIP_RPATH TRUE)
 LINK_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/externals/lib/
 )
