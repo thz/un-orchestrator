@@ -537,8 +537,8 @@ ENDIF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSE
 
 OPTION(BUILD_ExternalProjects "Build external projects (json-spirit, rofl, ...)" ON)
 
-IF(BUILD_ExternalProjects)
 include (ExternalProject)
+IF(BUILD_ExternalProjects)
 
 # json-spirit: extract, build, install (locally in build-dir):
 ExternalProject_Add(
@@ -576,12 +576,15 @@ ExternalProject_Add( Libvirt
 	ALWAYS 0
 )
 
+ENDIF(BUILD_ExternalProjects)
+
 # inih - https://github.com/benhoyt/inih
 ExternalProject_Add(
 	Inih
 	# GIT_REPOSITORY https://github.com/benhoyt/inih
 	# GIT_TAG r35
-	URL https://github.com/benhoyt/inih/archive/r35.zip
+	# URL https://github.com/benhoyt/inih/archive/r35.zip
+	URL ${CMAKE_SOURCE_DIR}/contrib/inih-r35.zip
 	URL_MD5 e131365d1ca20cfa687e3d9284e59d39
 	BUILD_IN_SOURCE 1
 	PATCH_COMMAND patch -p1 < ${CMAKE_SOURCE_DIR}/contrib/inih.patch
@@ -595,4 +598,3 @@ ExternalProject_Add(
 	COMMAND ${CMAKE_COMMAND} -E copy cpp/INIReader.h ${CMAKE_BINARY_DIR}/externals/include/
 )
 
-ENDIF(BUILD_ExternalProjects)
