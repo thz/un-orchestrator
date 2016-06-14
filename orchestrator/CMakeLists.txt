@@ -446,11 +446,6 @@ INCLUDE_DIRECTORIES (
 
 LINK_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/externals/lib/
-	/usr/lib/
-	/usr/local/lib/
-	/usr/x86_64-linux-gnu/
-	/usr/lib/x86_64-linux-gnu/
-	/usr/lib/python2.7/config-x86_64-linux-gnu/
 )
 
 # Create the executable
@@ -465,16 +460,16 @@ ADD_DEPENDENCIES(node-orchestrator Libvirt)
 ADD_DEPENDENCIES(node-orchestrator Inih)
 
 TARGET_LINK_LIBRARIES( node-orchestrator
-	libpthread.so
-	librofl_common.so
-	libjson_spirit.so
-	libinih.a
-	libmicrohttpd.so
-	libboost_system.so
-	libxml2.so
-	libsqlite3.so
-	libcrypto.so
-	-lrt
+	pthread
+	rofl_common
+	json_spirit
+	inih
+	microhttpd
+	boost_system
+	xml2
+	sqlite3
+	crypto
+	rt
 )
 
 IF(ENABLE_DOUBLE_DECKER_CONNECTION)
