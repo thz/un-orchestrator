@@ -1,17 +1,7 @@
-From 74e2e2bc40072e8d22acd2a58130c58529460765 Mon Sep 17 00:00:00 2001
-From: Tobias Hintze <thintze+git@tpip.net>
-Date: Fri, 10 Jun 2016 14:34:19 +0200
-Subject: [PATCH] also include cpp/INIReader.cpp in library
-
----
- extra/Makefile.static | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
-
-diff --git a/extra/Makefile.static b/extra/Makefile.static
-index 0d6519e..bc38326 100644
---- a/extra/Makefile.static
-+++ b/extra/Makefile.static
-@@ -1,7 +1,8 @@
+diff -Naurw inih-r35.orig/extra/Makefile.static inih-r35/extra/Makefile.static
+--- inih-r35.orig/extra/Makefile.static	2016-01-02 19:00:30.000000000 +0100
++++ inih-r35/extra/Makefile.static	2016-06-14 16:10:23.543622421 +0200
+@@ -1,10 +1,11 @@
  # Simple makefile to build inih as a static library using g++
  
 -SRC = ../ini.c
@@ -21,7 +11,8 @@ index 0d6519e..bc38326 100644
 +OBJ := $(patsubst %.cpp,%.o,$(OBJ))
  OUT = libinih.a
  INCLUDES = -I..
- CCFLAGS = -g -O2
--- 
-1.9.1
-
+-CCFLAGS = -g -O2
++CCFLAGS = -g -O2 -fPIC
+ CC = g++
+ 
+ default: $(OUT)
