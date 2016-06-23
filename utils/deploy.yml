@@ -1,0 +1,151 @@
+---
+- hosts: localhost
+  remote_user: root
+  tasks:
+    - name: "updates apt"
+      apt: update_cache=yes
+      
+    - name: "install dependencies"
+      apt: pkg={{item}} state=installed
+      with_items:
+        - git
+        - build-essential
+        - cmake
+        - cmake-curses-gui
+        - libboost-all-dev
+        - libmicrohttpd-dev
+        - libxml2-dev
+        - ethtool
+        - sqlite3
+        - libsqlite3-dev
+        - libssl-dev
+        - unzip
+        - automake      
+        - autoconf
+        - libtool
+        - pkg-config
+        - linux-libc-dev
+        - libc6-dev
+        - libcppunit-dev
+        - libcunit1-dev
+        - libjson-c-dev
+        - libjson-c2
+        - libzmq3-dev
+        
+    - name: "fetch rofl"
+      git: repo=https://github.com/bisdn/rofl-common
+           dest=/home/unify/prova/ansible/rofl-common
+           version=stable-0.6
+    
+    - name: "config rofl"
+      command: "./autogen.sh chdir=/home/unify/prova/ansible/rofl-common" 
+
+    - name: "build rofl"
+      command: "{{ item }} chdir=/home/unify/prova/ansible/rofl-common/build" 
+      with_items: 
+      - ../configure
+      - make
+      - make install
+      
+    - name: "fetch zeromq - A DoubleDecker prequisite"
+      get_url: url="http://github.com/zeromq/czmq/archive/v3.0.2.tar.gz" dest=/home/unify/prova/ansible/v3.0.2.tar.gz
+      
+    - name: "untar zeromq"
+      unarchive: src=/home/unify/prova/ansible/v3.0.2.tar.gz dest=/home/unify/prova/ansible/ copy=no
+
+    - name: "build zeromq"
+      shell: "{{ item }} chdir=/home/unify/prova/ansible/czmq-3.0.2"
+      with_items:
+      - ./autogen.sh
+      - ./configure --prefix=/usr
+      - make
+      - make install
+
+    - name: "fetch urcu - A DoubleDecker prequisite"
+      get_url: url="http://www.lttng.org/files/urcu/userspace-rcu-0.9.1.tar.bz2" dest=/home/unify/prova/ansible/userspace-rcu-0.9.1.tar.bz2
+      
+    - name: "untar urcu"
+      unarchive: src=/home/unify/prova/ansible/userspace-rcu-0.9.1.tar.bz2 dest=/home/unify/prova/ansible copy=no
+
+    - name: "build urcu"
+      shell: "{{ item }} chdir=/home/unify/prova/ansible/userspace-rcu-0.9.1"
+      with_items:
+      - ./configure --prefix=/usr
+      - make
+      - make install
+
+    - name: "fetch libsodium - A DoubleDecker prequisite"
+      get_url: url="http://download.libsodium.org/libsodium/releases/libsodium-1.0.7.tar.gz" dest=/home/unify/prova/ansible/libsodium-1.0.7.tar.gz
+      
+    - name: "untar libsodium"
+      unarchive: src=/home/unify/prova/ansible/libsodium-1.0.7.tar.gz dest=/home/unify/prova/ansible/ copy=no
+
+    - name: "build libsodium"
+      shell: "{{ item }} chdir=/home/unify/prova/ansible/libsodium-1.0.7"
+      with_items:
+      - ./configure
+      - make
+      - make install
+
+    - name: "fetch DoubleDecker"
+      git: repo=https://github.com/Acreo/DoubleDecker
+           dest=/home/unify/prova/ansible/DoubleDecker
+
+    - name: "build DoubleDecker"
+      shell: "{{ item }} chdir=/home/unify/prova/ansible/DoubleDecker"
+      with_items:
+      - ./boot.sh
+      - ./configure
+      - make -j2
+      - make install
+
+    - name: "fetch UN orchestrator"
+      git: repo=https://github.com/netgroup-polito/un-orchestrator.git
+           dest=/home/unify/prova/ansible/un-orchestrator 
+           version=elastic-router
+        
+    - name: "unzip json-spirit"
+      unarchive: src=/home/unify/prova/ansible/un-orchestrator/contrib/json-spirit.zip dest=/vagrant copy=no
+
+    - name: "build json-spirit"
+      command: "{{ item }} chdir=/home/unify/prova/ansible/json-spirit/build" 
+      with_items:
+      - cmake .
+      - make -j2
+      - make install
+
+    - name: "unzip inih"
+      unarchive: src=/home/unify/prova/ansible/un-orchestrator/contrib/inih.zip dest=/vagrant copy=no
+      
+    - name: "build inih"
+      shell: "{{ item }} chdir=/home/unify/prova/ansible/inih"
+      with_items:
+      - cp -r * /home/unify/prova/ansible/un-orchestrator/orchestrator/node_resource_manager/database_manager/SQLite
+      
+    - name: "fetch OVS"
+      get_url: url="http://openvswitch.org/releases/openvswitch-2.4.0.tar.gz" dest=/home/unify/prova/ansible/
+      
+    - name: "untar OVS"
+      unarchive: src=/home/unify/prova/ansible/openvswitch-2.4.0.tar.gz dest=~/ copy=no
+    
+    - name: "build OVS"
+      shell: "{{ item }} chdir=~/openvswitch-2.4.0"
+      with_items:
+      - ./configure --prefix=/ --datarootdir=/usr/share --with-linux=/lib/modules/$(uname -r)/build
+      - make -j2
+      - make install
+          
+    - name: "build name-resolver"
+      command: "{{ item }} chdir=/home/unify/prova/ansible/un-orchestrator/name-resolver"
+      with_items:
+      - cmake .
+      - make -j2
+
+    - name: "build orchestrator"
+      command: "{{ item }} chdir=/home/unify/prova/ansible/un-orchestrator/orchestrator"
+      with_items:
+      - cmake  -D'ENABLE_KVM=OFF' -D'ENABLE_DOCKER=ON' -D'ENABLE_DOUBLE_DECKER_CONNECTION=ON' .
+      - make -j2
+      
+    - name: "prepare python environment for virtualizer"
+      pip: name="gunicorn falcon cython enum"
