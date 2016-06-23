@@ -1,14 +1,16 @@
 ---
 - hosts: localhost
   remote_user: root
+
   tasks:
+    - debug: var=ps.stderr_lines
+
     - name: "updates apt"
       apt: update_cache=yes
       
     - name: "install dependencies"
       apt: pkg={{item}} state=installed
       with_items:
-        - git
         - build-essential
         - cmake
         - cmake-curses-gui
@@ -34,118 +36,113 @@
         
     - name: "fetch rofl"
       git: repo=https://github.com/bisdn/rofl-common
-           dest=/home/unify/prova/ansible/rofl-common
+           dest={{ path }}/rofl-common
            version=stable-0.6
     
     - name: "config rofl"
-      command: "./autogen.sh chdir=/home/unify/prova/ansible/rofl-common" 
+      command: "./autogen.sh chdir={{ path }}/rofl-common" 
 
-    - name: "build rofl"
-      command: "{{ item }} chdir=/home/unify/prova/ansible/rofl-common/build" 
+    - name: "build rofl (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/rofl-common/build" 
       with_items: 
       - ../configure
-      - make
+      - make -j{{ cores }}
       - make install
       
     - name: "fetch zeromq - A DoubleDecker prequisite"
-      get_url: url="http://github.com/zeromq/czmq/archive/v3.0.2.tar.gz" dest=/home/unify/prova/ansible/v3.0.2.tar.gz
+      get_url: url="http://github.com/zeromq/czmq/archive/v3.0.2.tar.gz" dest={{ path }}/v3.0.2.tar.gz
       
     - name: "untar zeromq"
-      unarchive: src=/home/unify/prova/ansible/v3.0.2.tar.gz dest=/home/unify/prova/ansible/ copy=no
+      unarchive: src={{ path }}/v3.0.2.tar.gz dest={{ path }} copy=no
 
-    - name: "build zeromq"
-      shell: "{{ item }} chdir=/home/unify/prova/ansible/czmq-3.0.2"
+    - name: "build zeromq (with {{ cores }} cores)"
+      shell: "{{ item }} chdir={{ path }}/czmq-3.0.2"
       with_items:
       - ./autogen.sh
       - ./configure --prefix=/usr
-      - make
+      - make -j{{ cores }}
       - make install
 
     - name: "fetch urcu - A DoubleDecker prequisite"
-      get_url: url="http://www.lttng.org/files/urcu/userspace-rcu-0.9.1.tar.bz2" dest=/home/unify/prova/ansible/userspace-rcu-0.9.1.tar.bz2
+      get_url: url="http://www.lttng.org/files/urcu/userspace-rcu-0.9.1.tar.bz2" dest={{ path }}/userspace-rcu-0.9.1.tar.bz2
       
     - name: "untar urcu"
-      unarchive: src=/home/unify/prova/ansible/userspace-rcu-0.9.1.tar.bz2 dest=/home/unify/prova/ansible copy=no
+      unarchive: src={{ path }}/userspace-rcu-0.9.1.tar.bz2 dest={{ path }} copy=no
 
-    - name: "build urcu"
-      shell: "{{ item }} chdir=/home/unify/prova/ansible/userspace-rcu-0.9.1"
+    - name: "build urcu (with {{ cores }} cores)"
+      shell: "{{ item }} chdir={{ path }}/userspace-rcu-0.9.1"
       with_items:
       - ./configure --prefix=/usr
-      - make
+      - make -j{{ cores }}
       - make install
 
     - name: "fetch libsodium - A DoubleDecker prequisite"
-      get_url: url="http://download.libsodium.org/libsodium/releases/libsodium-1.0.7.tar.gz" dest=/home/unify/prova/ansible/libsodium-1.0.7.tar.gz
+      get_url: url="http://download.libsodium.org/libsodium/releases/libsodium-1.0.7.tar.gz" dest={{ path }}/libsodium-1.0.7.tar.gz
       
     - name: "untar libsodium"
-      unarchive: src=/home/unify/prova/ansible/libsodium-1.0.7.tar.gz dest=/home/unify/prova/ansible/ copy=no
+      unarchive: src={{ path }}/libsodium-1.0.7.tar.gz dest={{ path }} copy=no
 
-    - name: "build libsodium"
-      shell: "{{ item }} chdir=/home/unify/prova/ansible/libsodium-1.0.7"
+    - name: "build libsodium (with {{ cores }} cores)"
+      shell: "{{ item }} chdir={{ path }}/libsodium-1.0.7"
       with_items:
       - ./configure
-      - make
+      - make -j{{ cores }}
       - make install
 
     - name: "fetch DoubleDecker"
       git: repo=https://github.com/Acreo/DoubleDecker
-           dest=/home/unify/prova/ansible/DoubleDecker
+           dest={{ path }}/DoubleDecker
 
-    - name: "build DoubleDecker"
-      shell: "{{ item }} chdir=/home/unify/prova/ansible/DoubleDecker"
+    - name: "build DoubleDecker (with {{ cores }} cores)"
+      shell: "{{ item }} chdir={{ path }}/DoubleDecker"
       with_items:
       - ./boot.sh
       - ./configure
-      - make -j2
+      - make -j{{ cores }}
       - make install
-
-    - name: "fetch UN orchestrator"
-      git: repo=https://github.com/netgroup-polito/un-orchestrator.git
-           dest=/home/unify/prova/ansible/un-orchestrator 
-           version=elastic-router
-        
+       
     - name: "unzip json-spirit"
-      unarchive: src=/home/unify/prova/ansible/un-orchestrator/contrib/json-spirit.zip dest=/vagrant copy=no
+      unarchive: src={{ path }}/un-orchestrator/contrib/json-spirit.zip dest={{ path }} copy=no
 
-    - name: "build json-spirit"
-      command: "{{ item }} chdir=/home/unify/prova/ansible/json-spirit/build" 
+    - name: "build json-spirit (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/json-spirit/build" 
       with_items:
       - cmake .
-      - make -j2
+      - make -j{{ cores }}
       - make install
 
     - name: "unzip inih"
-      unarchive: src=/home/unify/prova/ansible/un-orchestrator/contrib/inih.zip dest=/vagrant copy=no
+      unarchive: src={{ path }}/un-orchestrator/contrib/inih.zip dest={{ path }} copy=no
       
     - name: "build inih"
-      shell: "{{ item }} chdir=/home/unify/prova/ansible/inih"
+      shell: "{{ item }} chdir={{ path }}/un-orchestrator/contrib/inih"
       with_items:
-      - cp -r * /home/unify/prova/ansible/un-orchestrator/orchestrator/node_resource_manager/database_manager/SQLite
+      - cp -r * {{ path }}/un-orchestrator/orchestrator/node_resource_manager/database_manager/SQLite
       
     - name: "fetch OVS"
-      get_url: url="http://openvswitch.org/releases/openvswitch-2.4.0.tar.gz" dest=/home/unify/prova/ansible/
+      get_url: url="http://openvswitch.org/releases/openvswitch-2.4.0.tar.gz" dest={{ path }}
       
     - name: "untar OVS"
-      unarchive: src=/home/unify/prova/ansible/openvswitch-2.4.0.tar.gz dest=~/ copy=no
+      unarchive: src={{ path }}/openvswitch-2.4.0.tar.gz dest=~/ copy=no
     
-    - name: "build OVS"
+    - name: "build OVS (with {{ cores }} cores)"
       shell: "{{ item }} chdir=~/openvswitch-2.4.0"
       with_items:
       - ./configure --prefix=/ --datarootdir=/usr/share --with-linux=/lib/modules/$(uname -r)/build
-      - make -j2
+      - make -j{{ cores }}
       - make install
           
-    - name: "build name-resolver"
-      command: "{{ item }} chdir=/home/unify/prova/ansible/un-orchestrator/name-resolver"
+    - name: "build name-resolver (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/un-orchestrator/name-resolver"
       with_items:
       - cmake .
-      - make -j2
+      - make -j{{ cores }}
 
-    - name: "build orchestrator"
-      command: "{{ item }} chdir=/home/unify/prova/ansible/un-orchestrator/orchestrator"
+    - name: "build orchestrator (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/un-orchestrator/orchestrator"
       with_items:
       - cmake  -D'ENABLE_KVM=OFF' -D'ENABLE_DOCKER=ON' -D'ENABLE_DOUBLE_DECKER_CONNECTION=ON' .
-      - make -j2
+      - make -j{{ cores }}
       
     - name: "prepare python environment for virtualizer"
       pip: name="gunicorn falcon cython enum"
