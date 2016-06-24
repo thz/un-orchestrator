@@ -78,9 +78,11 @@
       
     - name: "fetch zeromq - A DoubleDecker prequisite"
       get_url: url="http://github.com/zeromq/czmq/archive/v3.0.2.tar.gz" dest={{ path }}/v3.0.2.tar.gz
+      when: dd == "ON"
       
     - name: "untar zeromq"
       unarchive: src={{ path }}/v3.0.2.tar.gz dest={{ path }} copy=no
+      when: dd == "ON"
 
     - name: "build zeromq (with {{ cores }} cores)"
       shell: "{{ item }} chdir={{ path }}/czmq-3.0.2"
@@ -89,12 +91,15 @@
       - ./configure --prefix=/usr
       - make -j{{ cores }}
       - make install
+      when: dd == "ON"
 
     - name: "fetch urcu - A DoubleDecker prequisite"
       get_url: url="http://www.lttng.org/files/urcu/userspace-rcu-0.9.1.tar.bz2" dest={{ path }}/userspace-rcu-0.9.1.tar.bz2
+      when: dd == "ON"
       
     - name: "untar urcu"
       unarchive: src={{ path }}/userspace-rcu-0.9.1.tar.bz2 dest={{ path }} copy=no
+      when: dd == "ON"
 
     - name: "build urcu (with {{ cores }} cores)"
       shell: "{{ item }} chdir={{ path }}/userspace-rcu-0.9.1"
@@ -102,12 +107,15 @@
       - ./configure --prefix=/usr
       - make -j{{ cores }}
       - make install
+      when: dd == "ON"
 
     - name: "fetch libsodium - A DoubleDecker prequisite"
       get_url: url="http://download.libsodium.org/libsodium/releases/libsodium-1.0.7.tar.gz" dest={{ path }}/libsodium-1.0.7.tar.gz
+      when: dd == "ON"
       
     - name: "untar libsodium"
       unarchive: src={{ path }}/libsodium-1.0.7.tar.gz dest={{ path }} copy=no
+      when: dd == "ON"
 
     - name: "build libsodium (with {{ cores }} cores)"
       shell: "{{ item }} chdir={{ path }}/libsodium-1.0.7"
@@ -115,10 +123,12 @@
       - ./configure
       - make -j{{ cores }}
       - make install
+      when: dd == "ON"
 
     - name: "fetch DoubleDecker"
       git: repo=https://github.com/Acreo/DoubleDecker
            dest={{ path }}/DoubleDecker
+      when: dd == "ON"
 
     - name: "build DoubleDecker (with {{ cores }} cores)"
       shell: "{{ item }} chdir={{ path }}/DoubleDecker"
