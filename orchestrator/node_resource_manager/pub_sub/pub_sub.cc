@@ -15,7 +15,8 @@ bool DoubleDeckerClient::init(char *clientName, char *brokerAddress, char *keyPa
 	pthread_mutex_init(&connected_mutex, NULL);
 
 	//Start and register a DD client on the brocker
-	client = start_ddactor((int)1, clientName, "public", brokerAddress,keyPath);
+	//client = start_ddactor((int)1, clientName, "public", brokerAddress,keyPath);
+	client = ddactor_new(clientName, brokerAddress,keyPath);
 
 	//Start a new thread that waits for events
 	pthread_t thread[1];
