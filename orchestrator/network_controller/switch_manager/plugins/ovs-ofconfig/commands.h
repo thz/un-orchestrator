@@ -1,6 +1,8 @@
 #ifndef OVS_COMMANDS_H_
 #define OVS_COMMANDS_H_ 1
 
+#define __STDC_FORMAT_MACROS
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
