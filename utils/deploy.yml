@@ -2,10 +2,11 @@
 - hosts: localhost
   remote_user: root
 
+#Requires to install ansible:
+# sudo apt-get install ansible
 #Run in with the command: 
 # sudo ansible-playbook --ask-sudo-pass -i "localhost," -c local  deploy.yml --extra-vars "cores=1 docker=OFF native=OFF kvm=ON double_decker=OFF"
 
-#TODO: install VKM is needed
 #TODO: install docker if needed
 
   vars:
@@ -16,35 +17,35 @@
     enable_native: '{{ native }}'
   
   tasks:
-#    - name: "updates apt"
-#      apt: update_cache=yes
+    - name: "updates apt"
+      apt: update_cache=yes
       
-#    - name: "install dependencies"
- #     apt: pkg={{item}} state=installed
- #     with_items:
- #       - git
- #       - build-essential
- #       - cmake
- #       - cmake-curses-gui
- #       - libboost-all-dev
- #       - libmicrohttpd-dev
- #       - libxml2-dev
- #       - ethtool
-#        - sqlite3
- #       - libsqlite3-dev
- #       - libssl-dev
- #       - unzip
- #       - automake      
- #       - autoconf
- #       - libtool
- #       - pkg-config
- #       - linux-libc-dev
- #       - libc6-dev
- #       - libcppunit-dev
- #       - libcunit1-dev
- #       - libjson-c-dev
- #       - libjson-c2
- #       - libzmq3-dev
+    - name: "install dependencies"
+      apt: pkg={{item}} state=installed
+      with_items:
+        - git
+        - build-essential
+        - cmake
+        - cmake-curses-gui
+        - libboost-all-dev
+        - libmicrohttpd-dev
+        - libxml2-dev
+        - ethtool
+        - sqlite3
+        - libsqlite3-dev
+        - libssl-dev
+        - unzip
+        - automake      
+        - autoconf
+        - libtool
+        - pkg-config
+        - linux-libc-dev
+        - libc6-dev
+        - libcppunit-dev
+        - libcunit1-dev
+        - libjson-c-dev
+        - libjson-c2
+        - libzmq3-dev
         
     - name: "install dependencies for KVM environment"
       apt: pkg={{item}} state=installed
@@ -71,20 +72,20 @@
         - ca-certificates
       when: enable_docker == "ON"
 
-#    - name: "fetch rofl"
-#      git: repo=https://github.com/bisdn/rofl-common
- #          dest={{ path }}/rofl-common
- #          version=stable-0.6
-  #  
-  #  - name: "config rofl"
-  #    command: "./autogen.sh chdir={{ path }}/rofl-common" 
+    - name: "fetch rofl"
+      git: repo=https://github.com/bisdn/rofl-common
+           dest={{ path }}/rofl-common
+           version=stable-0.6
+    
+    - name: "config rofl"
+      command: "./autogen.sh chdir={{ path }}/rofl-common" 
 
-   # - name: "build rofl (with {{ cores }} cores)"
-  #    command: "{{ item }} chdir={{ path }}/rofl-common/build" 
-  #    with_items: 
-  #    - ../configure
-  #    - make -j{{ cores }}
-  #    - make install
+    - name: "build rofl (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/rofl-common/build" 
+      with_items: 
+      - ../configure
+      - make -j{{ cores }}
+      - make install
       
     - name: "fetch zeromq - A DoubleDecker prequisite"
       get_url: url="http://github.com/zeromq/czmq/archive/v3.0.2.tar.gz" dest={{ path }}/v3.0.2.tar.gz
@@ -149,15 +150,15 @@
       - make install
       when: dd == "ON"
        
-#    - name: "unzip json-spirit"
- #     unarchive: src={{ path }}/un-orchestrator/contrib/json-spirit.zip dest={{ path }} copy=no
+    - name: "unzip json-spirit"
+      unarchive: src={{ path }}/un-orchestrator/contrib/json-spirit.zip dest={{ path }} copy=no
 
-#    - name: "build json-spirit (with {{ cores }} cores)"
- #     command: "{{ item }} chdir={{ path }}/json-spirit/build" 
- #     with_items:
- #     - cmake .
- #     - make -j{{ cores }}
- #     - make install
+    - name: "build json-spirit (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/json-spirit/build" 
+      with_items:
+      - cmake .
+      - make -j{{ cores }}
+      - make install
 
     - name: "unzip inih"
       unarchive: src={{ path }}/un-orchestrator/contrib/inih.zip dest={{ path }} copy=no
@@ -167,18 +168,18 @@
       with_items:
       - cp -r * ../un-orchestrator/orchestrator/node_resource_manager/database_manager/SQLite
 
-#    - name: "fetch OVS"
- #     get_url: url="http://openvswitch.org/releases/openvswitch-2.4.0.tar.gz" dest={{ path }}
+    - name: "fetch OVS"
+      get_url: url="http://openvswitch.org/releases/openvswitch-2.4.0.tar.gz" dest={{ path }}
       
-#    - name: "untar OVS"
- #     unarchive: src={{ path }}/openvswitch-2.4.0.tar.gz dest=~/ copy=no
+    - name: "untar OVS"
+      unarchive: src={{ path }}/openvswitch-2.4.0.tar.gz dest=~/ copy=no
     
- #   - name: "build OVS (with {{ cores }} cores)"
- #     shell: "{{ item }} chdir=~/openvswitch-2.4.0"
- #     with_items:
- #     - ./configure --prefix=/ --datarootdir=/usr/share --with-linux=/lib/modules/$(uname -r)/build
- #     - make -j{{ cores }}
- #     - make install
+    - name: "build OVS (with {{ cores }} cores)"
+      shell: "{{ item }} chdir=~/openvswitch-2.4.0"
+      with_items:
+      - ./configure --prefix=/ --datarootdir=/usr/share --with-linux=/lib/modules/$(uname -r)/build
+      - make -j{{ cores }}
+      - make install
       
     - name: "fetch libvirt"
       git: repo=git://libvirt.org/libvirt.git
