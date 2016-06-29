@@ -2,6 +2,7 @@
 from sys import maxint
 from exception import ClientError, ServerError
 from collections import OrderedDict
+from requests.exceptions import HTTPError
 __author__ = 'Ivano Cerrato, Stefano Petrangeli'
 
 import falcon
@@ -918,18 +919,30 @@ def sendToUniversalNode(rules, vnfs, endpoints):
 		if not nffg.getFlowRulesSendingTrafficToEndPoint(endpoint.id) and not nffg.getFlowRulesSendingTrafficFromEndPoint(endpoint.id):
 			nffg.end_points.remove(endpoint)
 			
-	graph_url = unOrchestratorURL + "/NF-FG/%s"		
+	graph_url = unOrchestratorURL + "/NF-FG/%s"
 	
 	try:
 		if len(nffg.flow_rules) + len(nffg.vnfs) + len(nffg.end_points) == 0:
 			LOG.debug("No elements have to be sent to the universal node orchestrator...sending a delete request")
 			LOG.debug("DELETE url: "+ graph_url % (nffg.id))
 			if debug_mode is False:
-				responseFromUN = requests.delete(graph_url % (nffg.id))
+				if authentication is True and token is None:
+					getToken()
+				responseFromUN = requests.delete(graph_url % (nffg.id), headers=headers)
 				LOG.debug("Status code received from the universal node orchestrator: %s",responseFromUN.status_code)
 				# TODO: check the correct code
 				if responseFromUN.status_code == 201: 
-					LOG.info("Graph successfully deleted")	
+					LOG.info("Graph successfully deleted")
+				elif responseFromUN.status_code == 401:
+					LOG.debug("Token expired, getting a new one...")
+					getToken()
+					newresponseFromUN = requests.delete(graph_url % (nffg.id), headers=headers)
+					LOG.debug("Status code received from the universal node orchestrator: %s",newresponseFromUN.status_code)
+					if newresponseFromUN.status_code == 201: 
+						LOG.info("Graph successfully deleted")
+					else:
+						LOG.error("Something went wrong while deleting the graph on the universal node")	
+						raise ServerError("Something went wrong while deleting the graph on the universal node")						
 				else:
 					LOG.error("Something went wrong while deleting the graph on the universal node")	
 					raise ServerError("Something went wrong while deleting the graph on the universal node")
@@ -939,12 +952,23 @@ def sendToUniversalNode(rules, vnfs, endpoints):
 			LOG.debug("PUT url: "+ graph_url % (nffg.id))
 			
 			if debug_mode is False:
-				headers = {'Content-Type': 'application/json'}
+				if authentication is True and token is None:
+					getToken()	
 				responseFromUN = requests.put(graph_url % (nffg.id), data=nffg.getJSON(), headers=headers)
 				LOG.debug("Status code received from the universal node orchestrator: %s",responseFromUN.status_code)
 			
 				if responseFromUN.status_code == 201:
-					LOG.info("New VNFs and flows properly deployed on the universal node")	
+					LOG.info("New VNFs and flows properly deployed on the universal node")
+				elif responseFromUN.status_code == 401:
+					LOG.debug("Token expired, getting a new one...")
+					getToken()
+					newresponseFromUN = requests.put(graph_url % (nffg.id), data=nffg.getJSON(), headers=headers)
+					LOG.debug("Status code received from the universal node orchestrator: %s",newresponseFromUN.status_code)
+					if newresponseFromUN.status_code == 201: 
+						LOG.info("New VNFs and flows properly deployed on the universal node")
+					else:
+						LOG.error("Something went wrong while deploying the new VNFs and flows on the universal node")	
+						raise ServerError("Something went wrong while deploying the new VNFs and flows on the universal node")
 				else:
 					LOG.error("Something went wrong while deploying the new VNFs and flows on the universal node")	
 					raise ServerError("Something went wrong while deploying the new VNFs and flows on the universal node")
@@ -952,7 +976,22 @@ def sendToUniversalNode(rules, vnfs, endpoints):
 	except (requests.ConnectionError):
 		LOG.error("Cannot contact the universal node orchestrator at '%s'",graph_url % (nffg.id))
 		raise ServerError("Cannot contact the universal node orchestrator at "+graph_url)
-			
+
+def getToken():
+	global token, headers
+	headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+	authenticationData = {'username': username, 'password': password}
+	authentication_url = unOrchestratorURL + "/login"	
+	resp = requests.post(authentication_url, data=json.dumps(authenticationData), headers=headers)
+	try:
+		resp.raise_for_status()
+		LOG.debug("Authentication successfully performed")
+		token = resp.text
+		headers = {'Content-Type': 'application/json', 'X-Auth-Token': token}
+	except HTTPError as err:
+		LOG.error(err)
+		raise ServerError("login failed: " + str(err))
+	
 '''
 	Methods used in the initialization phase of the virtualizer
 '''
@@ -1044,6 +1083,7 @@ def readConfigurationFile():
 	global unOrchestratorURL
 	global infrastructureFile
 	global cpu, memory, storage
+	global authentication, username, password
 	
 	LOG.info("Reading configuration file: '%s'",constants.CONFIGURATION_FILE)
 	config = ConfigParser.ConfigParser()
@@ -1064,6 +1104,22 @@ def readConfigurationFile():
 	except:
 		LOG.error("Option 'UNOrchestratorAddress' or option 'UNOrchestratorPort' not found in section 'connections' of file '%s'",constants.CONFIGURATION_FILE)
 		return False
+	
+	if 'un-orchestrator authentication' not in sections:
+		LOG.error("Wrong file '%s'. It does not include the section 'un-orchestrator authentication' :(",constants.CONFIGURATION_FILE)
+		return False
+	try:
+		authentication = config.getboolean("un-orchestrator authentication","authentication")
+	except:
+		LOG.error("Option 'authentication' not found in section 'un-orchestrator authentication' of file '%s'",constants.CONFIGURATION_FILE)
+		return False
+	if authentication is True:
+		try:
+			username = config.get("un-orchestrator authentication","username")
+			password = config.get("un-orchestrator authentication","password")	
+		except:
+			LOG.error("Option 'username' or 'password' not found in section 'un-orchestrator authentication' of file '%s'",constants.CONFIGURATION_FILE)
+			return False
 	
 	if 'resources' not in sections:
 		LOG.error("Wrong file '%s'. It does not include the section 'resources' :(",constants.CONFIGURATION_FILE)
@@ -1268,6 +1324,11 @@ unify_monitoring = ""
 cpu = ""
 memory = ""
 storage = ""
+authentication = False
+username = ""
+password = ""
+token = None
+headers = {'Content-Type': 'application/json'}
 
 # if debug_mode is True no interactions will be made with the UN
 debug_mode = False
