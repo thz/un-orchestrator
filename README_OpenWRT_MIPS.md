@@ -316,6 +316,4 @@ $root@imolaSDN ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
 Now you can run the orchestrator.
 
 
-***************************** TOgliere il flag -Werror da tutti i CMakeLists dell'orchestrator (orchestrator, name-resolver, db-initializer)
-
 
