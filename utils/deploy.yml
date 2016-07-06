@@ -95,7 +95,7 @@
       - make -j{{ cores }}
       - make install
       
-    - name: "fetch zeromq - A DoubleDecker prequisite"
+    - name: "fetch zeromq - A DoubleDecker prerequisite"
       get_url: url="http://github.com/zeromq/czmq/archive/v3.0.2.tar.gz" dest={{ path }}/v3.0.2.tar.gz
       when: dd == "ON"
       
@@ -112,7 +112,7 @@
       - make install
       when: dd == "ON"
 
-    - name: "fetch urcu - A DoubleDecker prequisite"
+    - name: "fetch urcu - A DoubleDecker prerequisite"
       get_url: url="http://www.lttng.org/files/urcu/userspace-rcu-0.9.1.tar.bz2" dest={{ path }}/userspace-rcu-0.9.1.tar.bz2
       when: dd == "ON"
       
@@ -128,7 +128,7 @@
       - make install
       when: dd == "ON"
 
-    - name: "fetch libsodium - A DoubleDecker prequisite"
+    - name: "fetch libsodium - A DoubleDecker prerequisite"
       get_url: url="http://download.libsodium.org/libsodium/releases/libsodium-1.0.7.tar.gz" dest={{ path }}/libsodium-1.0.7.tar.gz
       when: dd == "ON"
       
