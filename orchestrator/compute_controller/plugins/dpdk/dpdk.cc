@@ -86,6 +86,12 @@ bool Dpdk::stopNF(StopNFIn sni)
 
 }
 
+bool Dpdk::updateNF(UpdateNFIn uni)
+{
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Update not supported by this type of functions");
+	return false;
+}
+
 string Dpdk::getCores() {
 	string cores;
 	try {
