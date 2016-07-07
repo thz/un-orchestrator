@@ -39,14 +39,7 @@ SQLiteManager *dbm = NULL;
 /**
 *	Private prototypes
 */
-
-//<<<<<<< HEAD
-//bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file, bool *init_db, char **pwd);
-//bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char **nffg_file_name, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate);
-//=======
 bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file);
-//bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char **nffg_file_name, char **ports_file_name, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate);
-//>>>>>>> permissions
 bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char **nffg_file_name, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate);
 
 bool usage(void);
