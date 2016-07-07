@@ -14,6 +14,7 @@ void Controller::start()
 {
 	pthread_t thread[1];
 	pthread_create(&thread[0],NULL,loop,this);
+	pthread_setname_np(thread[0],"Openflow-Controller");
 }
 
 void Controller::handle_dpt_open(crofdpt& dpt)

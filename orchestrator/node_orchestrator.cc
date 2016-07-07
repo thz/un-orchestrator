@@ -25,13 +25,11 @@
 #include <signal.h>
 #include <execinfo.h>
 #include <sys/types.h>
-/* get REG_EIP from ucontext.h */
 #include <ucontext.h>
-char *executable_name = NULL;
 #ifdef __x86_64__
-#define USE_REG REG_RIP
-#else
-#define USE_REG REG_EIP
+	#define USE_REG REG_RIP
+//#else
+//	#define USE_REG REG_EIP
 #endif
 
 /**
@@ -104,10 +102,11 @@ void signal_handler(int sig, siginfo_t *info, void *secret)
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
 			DoubleDeckerClient::terminate();
 #endif
-
 			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Bye :D");
 			exit(EXIT_SUCCESS);
 		break;
+#ifdef __x86_64__
+		//We print the stack only if the orchestrator is executed on an x86_64 machine
 		case SIGSEGV:
 		{
 			void *trace[16];
@@ -155,6 +154,7 @@ void signal_handler(int sig, siginfo_t *info, void *secret)
 				}
 			}
 			exit(EXIT_FAILURE);
+#endif
 		}
 		break;
 	}
@@ -282,13 +282,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-#if 0
-	//XXX: this code avoids that the program terminates when system() is executed
-	sigset_t mask;
-	sigfillset(&mask);
-	sigprocmask(SIG_SETMASK, &mask, NULL);
-#endif
-
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
 	if(!DoubleDeckerClient::init(client_name, broker_address, key_path))
 	{
@@ -320,9 +313,17 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-#if 0
-	signal(SIGINT,singint_handler);
+	// Ignore all signals but SIGSEGV and SIGINT
+	sigset_t mask;
+	sigfillset(&mask);
+	sigprocmask(SIG_SETMASK, &mask, NULL);
+
+	sigset_t unblock;
+	sigaddset(&unblock,SIGINT);
+#ifdef __x86_64__
+	sigaddset(&unblock,SIGSEGV);
 #endif
+	sigprocmask(SIG_UNBLOCK,&unblock,&mask);
 
 	/* Install signal handlers */
 	struct sigaction sa;
@@ -331,7 +332,9 @@ int main(int argc, char *argv[])
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART | SA_SIGINFO;
 
+#ifdef __x86_64__
 	sigaction(SIGSEGV, &sa, NULL);
+#endif
 	sigaction(SIGINT, &sa, NULL);
 
 	printUniversalNodeInfo();
@@ -545,6 +548,10 @@ void printUniversalNodeInfo()
 {
 
 logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "************************************");
+
+#ifdef __x86_64__
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The %s is executed on an x86_64 machine",MODULE_NAME);
+#endif
 
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	string vswitch = "xDPd";
