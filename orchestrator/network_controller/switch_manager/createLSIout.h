@@ -29,7 +29,7 @@ private:
 	map<string,unsigned int> physical_ports;
 
 	/**
-	*	@brief: map of network functions id, map of network function ports name, network function ports identifier on the lsi
+	*	@brief: map of network functions id, map of network function ports name in the graph, network function ports identifier on the lsi
 	*		(i.e., the number of the Openflow port). The name of the network function ports is that selected by the node resource
 	*		manager based on the graph, and will be later used by the node resource manager to properly create the graph.
 	*		Example:
