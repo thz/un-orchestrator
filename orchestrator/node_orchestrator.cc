@@ -57,7 +57,6 @@ bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char *
 
 bool usage(void);
 void printUniversalNodeInfo();
-bool doChecks(void);
 void terminateRestServer(void);
 
 /**
@@ -145,12 +144,6 @@ int main(int argc, char *argv[])
 	if(geteuid() != 0)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Root permissions are required to run %s\n",argv[0]);
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
-		exit(EXIT_FAILURE);
-	}
-
-	if(!doChecks())
-	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
 	}
@@ -559,9 +552,6 @@ logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "****************************
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	string vswitch = "xDPd";
 #endif
-#ifdef VSWITCH_IMPLEMENTATION_OFCONFIG
-	string vswitch = "OvS with OFCONFIG protocol";
-#endif
 #ifdef VSWITCH_IMPLEMENTATION_OVSDB
 	stringstream ssvswitch;
 	ssvswitch << "OvS with OVSDB protocol";
@@ -597,18 +587,6 @@ logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "****************************
 #endif
 
 logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "************************************");
-}
-
-/**
-*	This function checks if the UN is properly configured.
-*/
-bool doChecks(void) {
-
-#ifdef VSWITCH_IMPLEMENTATION_OFCONFIG
-	logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The support to OFCONFIG is deprecated.");
-#endif
-
-	return true;
 }
 
 void terminateRestServer() {
