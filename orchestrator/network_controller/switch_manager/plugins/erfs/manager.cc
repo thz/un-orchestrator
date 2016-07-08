@@ -65,16 +65,15 @@ CreateLsiOut *ERFSManager::createLsi(CreateLsiIn cli)
     set<string> nfs = cli.getNetworkFunctionsName();
     for(set<string>::iterator nf = nfs.begin(); nf != nfs.end(); nf++) {
 //        list<string> port_name_on_switch;
-        map<string, unsigned int> port_names_and_id;
         AddNFportsIn anfpi(dpid, *nf, nf_types[*nf], cli.getNetworkFunctionsPortsInfo(*nf));
         AddNFportsOut *anfpo = addNFPorts(anfpi);
         if (anfpo == NULL) 
             logger(ORCH_WARNING, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "error in nfport add");
         out_nf_ports.insert(NfPortsMapMap::value_type(*nf, anfpo->getPorts()));
         out_nf_ports_name_on_switch[*nf] = anfpo->getPortsNameOnSwitch();
+        out_nf_ports_name_and_id[*nf] = anfpo->getPortNamesAndId();
         delete anfpo;
 
-        out_nf_ports_name_and_id[*nf] = port_names_and_id;
     }
 
     // Add Ports for Virtual Links (patch ports)
@@ -97,6 +96,7 @@ AddNFportsOut *ERFSManager::addNFPorts(AddNFportsIn anpi)
 { // SwitchManager implementation
     uint32_t numa_node = 0; // FIXME: assign ring to the correct NUMA node
     typedef map<string,unsigned int> PortsNameIdMap;
+    map<string, unsigned int> port_names_and_id;
     AddNFportsOut *anpo = NULL;
     uint64_t dpid = anpi.getDpid();
     string nf = anpi.getNfId();
@@ -124,8 +124,9 @@ AddNFportsOut *ERFSManager::addNFPorts(AddNFportsIn anpi)
         stringstream pid;
         pid << port_id;
         port_name_on_switch.push_back(pid.str());
+	port_names_and_id[pid.str()] = port_id;
     }
-    anpo = new AddNFportsOut(anpi.getNfId(), nf_ports_ids, port_name_on_switch);
+    anpo = new AddNFportsOut(anpi.getNfId(), nf_ports_ids, port_name_on_switch, port_names_and_id);
     return anpo;
 }
 

@@ -1494,6 +1494,7 @@ AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi, int socketNum
 {
 	list<struct nf_port_info> portInfo = anpi.getNetworkFunctionsPorts();//each element of portInfo contains the port name and the port type
 	uint64_t datapathNumber = anpi.getDpid();
+	map<string, unsigned int> port_names_and_id;
 
 	list<string> ports_name_on_switch;
 	map<string, unsigned int> ports;
@@ -1503,11 +1504,12 @@ AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi, int socketNum
 		string nameOnSwitch = add_port(pinfo->port_name, datapathNumber, true, socketNumber, pinfo->port_type);
 		ports_name_on_switch.push_back(nameOnSwitch);
 		ports[pinfo->port_name] = rnumber - 1;
+		port_names_and_id[nameOnSwitch] = rnumber - 1;
 
 		logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Port '%s' has name '%s' on the switch.",(pinfo->port_name).c_str(),nameOnSwitch.c_str());
 	}
 
-	AddNFportsOut *anf = new AddNFportsOut(anpi.getNfId(), ports, ports_name_on_switch);
+	AddNFportsOut *anf = new AddNFportsOut(anpi.getNfId(), ports, ports_name_on_switch, port_names_and_id);
 
 	return anf;
 }
