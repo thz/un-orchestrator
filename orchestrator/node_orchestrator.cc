@@ -166,11 +166,15 @@ int main(int argc, char *argv[])
 	if(geteuid() != 0)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Root permissions are required to run %s\n",argv[0]);
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
 	}
 
 	if(!doChecks())
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
+	}
 
 #ifdef VSWITCH_IMPLEMENTATION_ERFS
 	OFP_VERSION = OFP_13;
@@ -201,10 +205,16 @@ int main(int argc, char *argv[])
 	strcpy(config_file_name, DEFAULT_FILE);
 
 	if(!parse_command_line(argc,argv,&core_mask,&config_file_name))
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
+	}
 
 	if(!parse_config_file(config_file_name,&t_rest_port,&t_cli_auth,&t_nffg_file_name,physical_ports,&t_descr_file_name,&t_client_name,&t_broker_address,&t_key_path,&t_orchestrator_in_band,&t_un_interface,&t_un_address,&t_ipsec_certificate))
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
+	}
 
 	if(strcmp(t_descr_file_name, "UNKNOWN") != 0)
 		strcpy(descr_file_name, t_descr_file_name);
@@ -217,20 +227,10 @@ int main(int argc, char *argv[])
 		nffg_file_name = NULL;
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	if(strcmp(t_client_name, "UNKNOWN") != 0)
-		strcpy(client_name, t_client_name);
-	else
-		client_name = NULL;
-
-	if(strcmp(t_broker_address, "UNKNOWN") != 0)
-		strcpy(broker_address, t_broker_address);
-	else
-		broker_address = NULL;
-
-	if(strcmp(t_key_path, "UNKNOWN") != 0)
-		strcpy(key_path, t_key_path);
-	else
-		key_path = NULL;
+	//The following parameters ara mandatory in case of DD connection
+	strcpy(client_name, t_client_name);
+	strcpy(broker_address, t_broker_address);
+	strcpy(key_path, t_key_path);
 #endif
 
 	if(strcmp(t_un_interface, "UNKNOWN") != 0)
@@ -278,6 +278,7 @@ int main(int argc, char *argv[])
 		else {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Database does not exist!");
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Run 'db_initializer' at first.");
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -490,6 +491,25 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 	char *temp_key = new char[64];
 	strcpy(temp_key, (char *)reader.Get("double-decker", "key_path", "UNKNOWN").c_str());
 	*key_path = temp_key;
+
+	//The previous three parameters are mandatory!
+	if(strcmp(temp_cli, "UNKNOWN") == 0)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error in configuration file '%'s. Mandatory parameter 'client_name' is missing.",config_file_name);
+		return false;
+	}
+
+	if(strcmp(temp_dealer, "UNKNOWN") == 0)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error in configuration file '%'s. Mandatory parameter 'brocker_address' is missing.",config_file_name);
+		return false;
+	}
+
+	if(strcmp(temp_key, "UNKNOWN") == 0)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error in configuration file '%'s. Mandatory parameter 'key_path	' is missing.",config_file_name);
+		return false;
+	}
 #endif
 
 	/* orchestrator in band or out of band */
@@ -588,6 +608,10 @@ logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "****************************
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* Execution environments supported:");
 	for(list<string>::iterator ee = executionenvironment.begin(); ee != executionenvironment.end(); ee++)
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* \t'%s'",ee->c_str());
+
+#ifdef ENABLE_DOUBLE_DECKER_CONNECTION
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* Double Decker connection is enabled");
+#endif
 
 logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "************************************");
 }
