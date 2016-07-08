@@ -57,33 +57,11 @@ bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char *
 
 bool usage(void);
 void printUniversalNodeInfo();
-bool doChecks(void);
 void terminateRestServer(void);
 
 /**
 *	Implementations
 */
-#if 0
-void singint_handler(int sig)
-{
-    logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is terminating...",MODULE_NAME);
-
-	MHD_stop_daemon(http_daemon);
-	terminateRestServer();
-
-	if(dbm != NULL) {
-		//dbm->updateDatabase();
-		dbm->cleanTables();
-	}
-
-#ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	DoubleDeckerClient::terminate();
-#endif
-
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Bye :D");
-	exit(EXIT_SUCCESS);
-}
-#endif
 
 void signal_handler(int sig, siginfo_t *info, void *secret)
 {
@@ -166,11 +144,9 @@ int main(int argc, char *argv[])
 	if(geteuid() != 0)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Root permissions are required to run %s\n",argv[0]);
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
 	}
-
-	if(!doChecks())
-		exit(EXIT_FAILURE);
 
 #ifdef VSWITCH_IMPLEMENTATION_ERFS
 	OFP_VERSION = OFP_13;
@@ -201,10 +177,16 @@ int main(int argc, char *argv[])
 	strcpy(config_file_name, DEFAULT_FILE);
 
 	if(!parse_command_line(argc,argv,&core_mask,&config_file_name))
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
+	}
 
 	if(!parse_config_file(config_file_name,&t_rest_port,&t_cli_auth,&t_nffg_file_name,physical_ports,&t_descr_file_name,&t_client_name,&t_broker_address,&t_key_path,&t_orchestrator_in_band,&t_un_interface,&t_un_address,&t_ipsec_certificate))
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
+	}
 
 	if(strcmp(t_descr_file_name, "UNKNOWN") != 0)
 		strcpy(descr_file_name, t_descr_file_name);
@@ -217,20 +199,10 @@ int main(int argc, char *argv[])
 		nffg_file_name = NULL;
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	if(strcmp(t_client_name, "UNKNOWN") != 0)
-		strcpy(client_name, t_client_name);
-	else
-		client_name = NULL;
-
-	if(strcmp(t_broker_address, "UNKNOWN") != 0)
-		strcpy(broker_address, t_broker_address);
-	else
-		broker_address = NULL;
-
-	if(strcmp(t_key_path, "UNKNOWN") != 0)
-		strcpy(key_path, t_key_path);
-	else
-		key_path = NULL;
+	//The following parameters ara mandatory in case of DD connection
+	strcpy(client_name, t_client_name);
+	strcpy(broker_address, t_broker_address);
+	strcpy(key_path, t_key_path);
 #endif
 
 	if(strcmp(t_un_interface, "UNKNOWN") != 0)
@@ -278,6 +250,7 @@ int main(int argc, char *argv[])
 		else {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Database does not exist!");
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Run 'db_initializer' at first.");
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -365,46 +338,46 @@ static struct option lgopts[] = {
 	*core_mask = CORE_MASK;
 
 	while ((opt = getopt_long(argc, argvopt, "", lgopts, &option_index)) != EOF)
-    	{
+	{
 		switch (opt)
 		{
 			/* long options */
 			case 0:
-	   			if (!strcmp(lgopts[option_index].name, "c"))/* core mask for network functions */
-	   			{
-	   				if(arg_c > 0)
-	   				{
-		   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--c\" can appear only once in the command line");
-	   					return usage();
-	   				}
-	   				char *port = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-	   				strcpy(port,optarg);
-
-	   				sscanf(port,"%x",&(*core_mask));
-
-	   				arg_c++;
-	   			}
-				else if (!strcmp(lgopts[option_index].name, "d"))/* inserting configuration file */
-	   			{
+				if (!strcmp(lgopts[option_index].name, "c"))/* core mask for network functions */
+				{
 					if(arg_c > 0)
-	   				{
-		   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--d\" can appear only once in the command line");
-	   					return usage();
-	   				}
+					{
+						logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--c\" can appear only once in the command line");
+						return usage();
+					}
+					char *port = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
+					strcpy(port,optarg);
 
-	   				strcpy(*config_file_name,optarg);
+					sscanf(port,"%x",&(*core_mask));
 
-	   				arg_c++;
-	   			}
+					arg_c++;
+				}
+				else if (!strcmp(lgopts[option_index].name, "d"))/* inserting configuration file */
+				{
+					if(arg_c > 0)
+					{
+						logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--d\" can appear only once in the command line");
+						return usage();
+					}
+
+					strcpy(*config_file_name,optarg);
+
+					arg_c++;
+				}
 				else if (!strcmp(lgopts[option_index].name, "h"))/* help */
-	   			{
-	   				return usage();
-	   			}
-	   			else
-	   			{
-	   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Invalid command line parameter '%s'\n",lgopts[option_index].name);
-	   				return usage();
-	   			}
+				{
+					return usage();
+				}
+				else
+				{
+					logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Invalid command line parameter '%s'\n",lgopts[option_index].name);
+					return usage();
+				}
 				break;
 			default:
 				return usage();
@@ -421,7 +394,7 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 
 	/*
 	*
-	* Parsing universal node configuration file
+	* Parsing universal node configuration file. Checks about mandatory parameters are done in this functions.
 	*
 	*/
 	INIReader reader(config_file_name);
@@ -431,7 +404,7 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 		return false;
 	}
 
-	/* Physical ports */
+	// ports_name : optional
 	char tmp_physical_ports[PATH_MAX];
 	strcpy(tmp_physical_ports, (char *)reader.Get("physical ports", "ports_name", "UNKNOWN").c_str());
 	if(strcmp(tmp_physical_ports, "UNKNOWN") != 0 && strcmp(tmp_physical_ports, "") != 0)
@@ -447,24 +420,29 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 
 		//the string just read must be tokenized
 		char delimiter[] = " ";
-	 	char * pnt;
+		char * pnt;
 		pnt=strtok(tmp_physical_ports + 1, delimiter);
-	 	while(pnt!= NULL)
-	 	{
-	 		logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tphysical port: %s",pnt);
-		 	string s(pnt);
-		 	physical_ports.insert(pnt);
-		 	pnt = strtok( NULL, delimiter );
-	 	}
+		while(pnt!= NULL)
+		{
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tphysical port: %s",pnt);
+			string s(pnt);
+			physical_ports.insert(pnt);
+			pnt = strtok( NULL, delimiter );
+		}
 	}
 
-	/* REST port */
+	// server_port : mandatory
 	int temp_rest_port = (int)reader.GetInteger("rest server", "server_port", -1);
 	if(temp_rest_port != -1)
 		*rest_port = temp_rest_port;
+	else
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error in configuration file '%'s. Mandatory parameter 'server_port' is missing.",config_file_name);
+		return false;
+	}
 
-	/* client authentication */
-	*cli_auth = reader.GetBoolean("user authentication", "user_authentication", true);
+	// user_authentication : optional - false if not specified
+	*cli_auth = reader.GetBoolean("user authentication", "user_authentication", false);
 
 	/* first nf-fg file name */
 	char *temp_nf_fg = new char[64];
@@ -476,24 +454,42 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 	strcpy(temp_descr, (char *)reader.Get("resource-manager", "description_file", "UNKNOWN").c_str());
 	*descr_file_name = temp_descr;
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	/* client name of Double Decker */
+	// client_name : mandatory
 	char *temp_cli = new char[64];
 	strcpy(temp_cli, (char *)reader.Get("double-decker", "client_name", "UNKNOWN").c_str());
 	*client_name = temp_cli;
 
-	/* broker address of Double Decker */
+	// brocker_address : mandatory
 	char *temp_dealer = new char[64];
 	strcpy(temp_dealer, (char *)reader.Get("double-decker", "broker_address", "UNKNOWN").c_str());
 	*broker_address = temp_dealer;
 
-	/* client name of Double Decker */
+	// key_path : mandatory
 	char *temp_key = new char[64];
 	strcpy(temp_key, (char *)reader.Get("double-decker", "key_path", "UNKNOWN").c_str());
 	*key_path = temp_key;
+
+	if(strcmp(temp_cli, "UNKNOWN") == 0)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error in configuration file '%'s. Mandatory parameter 'client_name' is missing.",config_file_name);
+		return false;
+	}
+
+	if(strcmp(temp_dealer, "UNKNOWN") == 0)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error in configuration file '%'s. Mandatory parameter 'brocker_address' is missing.",config_file_name);
+		return false;
+	}
+
+	if(strcmp(temp_key, "UNKNOWN") == 0)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error in configuration file '%'s. Mandatory parameter 'key_path	' is missing.",config_file_name);
+		return false;
+	}
 #endif
 
-	/* orchestrator in band or out of band */
-	*orchestrator_in_band = reader.GetBoolean("orchestrator", "is_in_band", true);
+	// is_in_bande : optional - false if not specified
+	*orchestrator_in_band = reader.GetBoolean("orchestrator", "is_in_band", false);
 
 	/* universal node interface */
 	char *temp_ctrl_iface = new char[64];
@@ -556,9 +552,6 @@ logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "****************************
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	string vswitch = "xDPd";
 #endif
-#ifdef VSWITCH_IMPLEMENTATION_OFCONFIG
-	string vswitch = "OvS with OFCONFIG protocol";
-#endif
 #ifdef VSWITCH_IMPLEMENTATION_OVSDB
 	stringstream ssvswitch;
 	ssvswitch << "OvS with OVSDB protocol";
@@ -589,19 +582,11 @@ logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "****************************
 	for(list<string>::iterator ee = executionenvironment.begin(); ee != executionenvironment.end(); ee++)
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* \t'%s'",ee->c_str());
 
-logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "************************************");
-}
-
-/**
-*	This function checks if the UN is properly configured.
-*/
-bool doChecks(void) {
-
-#ifdef VSWITCH_IMPLEMENTATION_OFCONFIG
-	logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The support to OFCONFIG is deprecated.");
+#ifdef ENABLE_DOUBLE_DECKER_CONNECTION
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* Double Decker connection is enabled");
 #endif
 
-	return true;
+logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "************************************");
 }
 
 void terminateRestServer() {
