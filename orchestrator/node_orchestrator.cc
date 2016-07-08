@@ -63,27 +63,6 @@ void terminateRestServer(void);
 /**
 *	Implementations
 */
-#if 0
-void singint_handler(int sig)
-{
-    logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is terminating...",MODULE_NAME);
-
-	MHD_stop_daemon(http_daemon);
-	terminateRestServer();
-
-	if(dbm != NULL) {
-		//dbm->updateDatabase();
-		dbm->cleanTables();
-	}
-
-#ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	DoubleDeckerClient::terminate();
-#endif
-
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Bye :D");
-	exit(EXIT_SUCCESS);
-}
-#endif
 
 void signal_handler(int sig, siginfo_t *info, void *secret)
 {
@@ -366,46 +345,46 @@ static struct option lgopts[] = {
 	*core_mask = CORE_MASK;
 
 	while ((opt = getopt_long(argc, argvopt, "", lgopts, &option_index)) != EOF)
-    	{
+	{
 		switch (opt)
 		{
 			/* long options */
 			case 0:
-	   			if (!strcmp(lgopts[option_index].name, "c"))/* core mask for network functions */
-	   			{
-	   				if(arg_c > 0)
-	   				{
-		   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--c\" can appear only once in the command line");
-	   					return usage();
-	   				}
-	   				char *port = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
-	   				strcpy(port,optarg);
-
-	   				sscanf(port,"%x",&(*core_mask));
-
-	   				arg_c++;
-	   			}
-				else if (!strcmp(lgopts[option_index].name, "d"))/* inserting configuration file */
-	   			{
+				if (!strcmp(lgopts[option_index].name, "c"))/* core mask for network functions */
+				{
 					if(arg_c > 0)
-	   				{
-		   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--d\" can appear only once in the command line");
-	   					return usage();
-	   				}
+					{
+						logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--c\" can appear only once in the command line");
+						return usage();
+					}
+					char *port = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
+					strcpy(port,optarg);
 
-	   				strcpy(*config_file_name,optarg);
+					sscanf(port,"%x",&(*core_mask));
 
-	   				arg_c++;
-	   			}
+					arg_c++;
+				}
+				else if (!strcmp(lgopts[option_index].name, "d"))/* inserting configuration file */
+				{
+					if(arg_c > 0)
+					{
+						logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--d\" can appear only once in the command line");
+						return usage();
+					}
+
+					strcpy(*config_file_name,optarg);
+
+					arg_c++;
+				}
 				else if (!strcmp(lgopts[option_index].name, "h"))/* help */
-	   			{
-	   				return usage();
-	   			}
-	   			else
-	   			{
-	   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Invalid command line parameter '%s'\n",lgopts[option_index].name);
-	   				return usage();
-	   			}
+				{
+					return usage();
+				}
+				else
+				{
+					logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Invalid command line parameter '%s'\n",lgopts[option_index].name);
+					return usage();
+				}
 				break;
 			default:
 				return usage();
@@ -448,15 +427,15 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 
 		//the string just read must be tokenized
 		char delimiter[] = " ";
-	 	char * pnt;
+		char * pnt;
 		pnt=strtok(tmp_physical_ports + 1, delimiter);
-	 	while(pnt!= NULL)
-	 	{
-	 		logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tphysical port: %s",pnt);
-		 	string s(pnt);
-		 	physical_ports.insert(pnt);
-		 	pnt = strtok( NULL, delimiter );
-	 	}
+		while(pnt!= NULL)
+		{
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tphysical port: %s",pnt);
+			string s(pnt);
+			physical_ports.insert(pnt);
+			pnt = strtok( NULL, delimiter );
+		}
 	}
 
 	// server_port : mandatory
