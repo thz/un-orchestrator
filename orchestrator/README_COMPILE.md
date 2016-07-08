@@ -135,8 +135,8 @@ Please note that performance-wise there is some drop on Xeon between DPDK 1.7 an
 In order to install xDPd with DPDK support, you have to follow the steps below.
 
 	$ git clone https://github.com/bisdn/xdpd
-	$ git checkout stable
 	$ cd xdpd/
+	$ git checkout stable
 
 	;Install all the libraries required by the README provided in this folder
 	;Edit config/dpdk.m4 and
