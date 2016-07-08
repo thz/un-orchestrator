@@ -115,7 +115,7 @@ bool Native::isSupported(Description& descr) {
 bool Native::updateNF(UpdateNFIn uni)
 {
 	uint64_t lsiID = uni.getLsiID();
-	std::string nf_name = uni.getNfName();
+	std::string nf_name = uni.getNfId();
 	map<unsigned int, string> namesOfPortsOnTheSwitch = uni.getNamesOfPortsOnTheSwitch();
 	list<unsigned int> newPorts = uni.getNewPortsToAdd();
 	unsigned int n_ports = newPorts.size();
