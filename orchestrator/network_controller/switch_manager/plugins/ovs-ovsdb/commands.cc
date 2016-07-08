@@ -442,10 +442,13 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 				//port_l[dnumber].push_back(name_on_switch);
 
 				/*fill the map ports*/
-				n_ports_1[nfp->port_name] = rnumber-1;
+				n_ports_1[nfp->port_name] = rnumber-1; //This is the ID Openflow
 				port_names_on_switch.push_back(name_on_switch);
 				port_names_and_id[name_on_switch] = nfp->port_id;
-				
+
+				logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Network function ID: %s - port name on graph: %s - port ID on LSI: %d",(*nf).c_str(),(nfp->port_name).c_str(),rnumber-1);
+				logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Network function ID: %s - port name on LSI: %s",(*nf).c_str(),name_on_switch.c_str());
+				logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Network function ID: %s - port name on LSI: %s - port ID on graph: %d",(*nf).c_str(),name_on_switch.c_str(),nfp->port_id);
 			}
 
 			/*fill the network_functions_ports*/
