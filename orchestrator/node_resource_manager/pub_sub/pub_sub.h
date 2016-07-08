@@ -38,11 +38,9 @@ private:
 	*/
 	static bool connected;
 
-	/**
-	*	@brief: this variable is true when the connection with the 
-	*		Deouble Decker is going to terminate
-	*/
-	static bool run_loop;
+	static char *clientName; 
+	static char *brokerAddress;
+	static char *keyPath;
 
 	/**
 	*	@brief: list contaning messages to be sent (and the related topic)
