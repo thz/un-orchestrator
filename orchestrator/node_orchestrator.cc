@@ -422,7 +422,7 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 
 	/*
 	*
-	* Parsing universal node configuration file
+	* Parsing universal node configuration file. Checks about mandatory parameters are done in this functions.
 	*
 	*/
 	INIReader reader(config_file_name);
@@ -432,7 +432,7 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 		return false;
 	}
 
-	/* Physical ports */
+	// ports_name : optional
 	char tmp_physical_ports[PATH_MAX];
 	strcpy(tmp_physical_ports, (char *)reader.Get("physical ports", "ports_name", "UNKNOWN").c_str());
 	if(strcmp(tmp_physical_ports, "UNKNOWN") != 0 && strcmp(tmp_physical_ports, "") != 0)
@@ -459,13 +459,18 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 	 	}
 	}
 
-	/* REST port */
+	// server_port : mandatory
 	int temp_rest_port = (int)reader.GetInteger("rest server", "server_port", -1);
 	if(temp_rest_port != -1)
 		*rest_port = temp_rest_port;
+	else
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error in configuration file '%'s. Mandatory parameter 'server_port' is missing.",config_file_name);
+		return false;
+	}
 
-	/* client authentication */
-	*cli_auth = reader.GetBoolean("user authentication", "user_authentication", true);
+	// user_authentication : optional - false if not specified
+	*cli_auth = reader.GetBoolean("user authentication", "user_authentication", false);
 
 	/* first nf-fg file name */
 	char *temp_nf_fg = new char[64];
@@ -477,22 +482,21 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 	strcpy(temp_descr, (char *)reader.Get("resource-manager", "description_file", "UNKNOWN").c_str());
 	*descr_file_name = temp_descr;
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	/* client name of Double Decker */
+	// client_name : mandatory
 	char *temp_cli = new char[64];
 	strcpy(temp_cli, (char *)reader.Get("double-decker", "client_name", "UNKNOWN").c_str());
 	*client_name = temp_cli;
 
-	/* broker address of Double Decker */
+	// brocker_address : mandatory
 	char *temp_dealer = new char[64];
 	strcpy(temp_dealer, (char *)reader.Get("double-decker", "broker_address", "UNKNOWN").c_str());
 	*broker_address = temp_dealer;
 
-	/* client name of Double Decker */
+	// key_path : mandatory
 	char *temp_key = new char[64];
 	strcpy(temp_key, (char *)reader.Get("double-decker", "key_path", "UNKNOWN").c_str());
 	*key_path = temp_key;
 
-	//The previous three parameters are mandatory!
 	if(strcmp(temp_cli, "UNKNOWN") == 0)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error in configuration file '%'s. Mandatory parameter 'client_name' is missing.",config_file_name);
@@ -512,8 +516,8 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 	}
 #endif
 
-	/* orchestrator in band or out of band */
-	*orchestrator_in_band = reader.GetBoolean("orchestrator", "is_in_band", true);
+	// is_in_bande : optional - false if not specified
+	*orchestrator_in_band = reader.GetBoolean("orchestrator", "is_in_band", false);
 
 	/* universal node interface */
 	char *temp_ctrl_iface = new char[64];
