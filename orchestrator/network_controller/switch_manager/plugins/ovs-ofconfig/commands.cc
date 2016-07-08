@@ -1618,7 +1618,7 @@ AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi){
 	if( remove( TMP_XML_FILE ) != 0 )
     		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error deleting file" );
 
-	anf = new AddNFportsOut(anpi.getNFname(), ports);
+	anf = new AddNFportsOut(anpi.getNfId(), ports);
 
 	return anf;
 }

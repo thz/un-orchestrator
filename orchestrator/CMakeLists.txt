@@ -316,6 +316,9 @@ SET(SOURCES1
 	node_resource_manager/database_manager/SQLite/INIReader.cpp
 	node_resource_manager/database_manager/SQLite/ini.c
 
+	node_resource_manager/security_manager/security_manager.cc
+	node_resource_manager/security_manager/security_manager.h
+
 	utils/logger.h
 	utils/logger.c
 	utils/constants.h
@@ -356,7 +359,7 @@ ENDIF((VSWITCH_IMPLEMENTATION_INDEX EQUAL 2) OR (VSWITCH_IMPLEMENTATION_INDEX EQ
 
 IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 4)
     SET(SOURCES2
-    ${SOURCES}
+    ${SOURCES1}
 	network_controller/switch_manager/plugins/erfs/manager.h
 	network_controller/switch_manager/plugins/erfs/manager.cc
 	network_controller/switch_manager/plugins/erfs/constants.h
@@ -468,7 +471,7 @@ LINK_DIRECTORIES(
 
 TARGET_LINK_LIBRARIES( node-orchestrator
 	libpthread.so
-	/usr/local/lib/librofl_common.so
+	librofl_common.so
 	libjson_spirit.so
 	libmicrohttpd.so
 	libboost_system.so

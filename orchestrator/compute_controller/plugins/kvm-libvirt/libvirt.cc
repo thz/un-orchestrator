@@ -76,7 +76,7 @@ bool Libvirt::startNF(StartNFIn sni)
 	char domain_name[64];
 	const char *xmlconfig = NULL;
 
-	string nf_name = sni.getNfName();
+	string nf_name = sni.getNfId();
 	string uri_image = description->getURI();
 
 	/* Domain name */
@@ -315,7 +315,7 @@ bool Libvirt::startNF(StartNFIn sni)
 		stringstream ports;
 
 		ostringstream cmd;
-		cmd << "group-ivshmems " << sni.getLsiID() << "." << sni.getNfName();
+		cmd << "group-ivshmems " << sni.getLsiID() << "." << sni.getNfId();
 		for (vector< pair<string, string> >::iterator it = ivshmemPorts.begin(); it != ivshmemPorts.end(); ++it) {
 			cmd << " IVSHMEM:" << sni.getLsiID() << "-" << it->first;
 		}
@@ -331,7 +331,7 @@ bool Libvirt::startNF(StartNFIn sni)
 		}
 
 		char name[256];
-		sprintf(name, "/tmp/ivshmem_qemu_cmdline_%lu.%s", sni.getLsiID(), sni.getNfName().c_str());
+		sprintf(name, "/tmp/ivshmem_qemu_cmdline_%lu.%s", sni.getLsiID(), sni.getNfId().c_str());
 		FILE *f = fopen(name, "r");
 		if(f == NULL) {
 			UN_LOG(ORCH_DEBUG_INFO, "Error opening file");
@@ -438,7 +438,7 @@ bool Libvirt::stopNF(StopNFIn sni)
 {
 	/*image_name*/
 	char vm_name[64];
-	sprintf(vm_name, "%" PRIu64 "_%s", sni.getLsiID(), sni.getNfName().c_str());
+	sprintf(vm_name, "%" PRIu64 "_%s", sni.getLsiID(), sni.getNfId().c_str());
 
 	assert(connection != NULL);
 

@@ -1,3 +1,6 @@
+#define __USE_GNU 1
+#define _GNU_SOURCE 1
+
 #include "utils/constants.h"
 #include "utils/logger.h"
 #include "node_resource_manager/rest_server/rest_server.h"
@@ -19,6 +22,16 @@
 
 #include "node_resource_manager/database_manager/SQLite/INIReader.h"
 
+#include <signal.h>
+#include <execinfo.h>
+#include <sys/types.h>
+#include <ucontext.h>
+#ifdef __x86_64__
+	#define USE_REG REG_RIP
+//#else
+//	#define USE_REG REG_EIP
+#endif
+
 /**
 *	Global variables (defined in ../utils/constants.h)
 */
@@ -39,18 +52,18 @@ SQLiteManager *dbm = NULL;
 /**
 *	Private prototypes
 */
-bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file, bool *init_db, char **pwd);
+bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file);
 bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char **nffg_file_name, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate);
+
 bool usage(void);
 void printUniversalNodeInfo();
 bool doChecks(void);
 void terminateRestServer(void);
-bool createDB(SQLiteManager *dbm, char *pwd);
 
 /**
 *	Implementations
 */
-
+#if 0
 void singint_handler(int sig)
 {
     logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is terminating...",MODULE_NAME);
@@ -58,8 +71,10 @@ void singint_handler(int sig)
 	MHD_stop_daemon(http_daemon);
 	terminateRestServer();
 
-	if(dbm != NULL)
-		dbm->eraseAllToken();
+	if(dbm != NULL) {
+		//dbm->updateDatabase();
+		dbm->cleanTables();
+	}
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
 	DoubleDeckerClient::terminate();
@@ -67,6 +82,82 @@ void singint_handler(int sig)
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Bye :D");
 	exit(EXIT_SUCCESS);
+}
+#endif
+
+void signal_handler(int sig, siginfo_t *info, void *secret)
+{
+	switch(sig)
+	{
+		case SIGINT:
+			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is terminating...",MODULE_NAME);
+
+			MHD_stop_daemon(http_daemon);
+			terminateRestServer();
+
+			if(dbm != NULL) {
+				//dbm->updateDatabase();
+				dbm->cleanTables();
+			}
+#ifdef ENABLE_DOUBLE_DECKER_CONNECTION
+			DoubleDeckerClient::terminate();
+#endif
+			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Bye :D");
+			exit(EXIT_SUCCESS);
+		break;
+#ifdef __x86_64__
+		//We print the stack only if the orchestrator is executed on an x86_64 machine
+		case SIGSEGV:
+		{
+			void *trace[16];
+			char **messages = (char **)NULL;
+			int i, trace_size = 0;
+			ucontext_t *uc = (ucontext_t *)secret;
+
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "");
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Got signal %d, faulty address is %p, from %p", sig, info->si_addr, uc->uc_mcontext.gregs[USE_REG]);
+
+			trace_size = backtrace(trace, 16);
+			/* overwrite sigaction with caller's address */
+			trace[1] = (void *)uc->uc_mcontext.gregs[USE_REG];
+
+			messages = backtrace_symbols(trace, trace_size);
+			/* skip first stack frame (points here) */
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Backtrace -");
+			for (i = 1; i < trace_size; ++i)
+			{
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s ", messages[i]);
+				size_t p = 0;
+				while (messages[i][p] != '(' && messages[i][p] != ' ' && messages[i][p] != 0)
+					++p;
+				char syscom[256];
+				sprintf(syscom, "addr2line -f -p %p -e %.*s", trace[i], (int)p, messages[i]);
+
+				char *output;
+				FILE *fp;
+				char path[1035];
+
+				/* Open the command for reading. */
+				fp = popen(syscom, "r");
+				if (fp == NULL) {
+					printf("Failed to run command %s", syscom);
+				}
+				fgets(path, sizeof(path), fp);
+				fclose(fp);
+
+				output = strdup(path);
+
+				if (output != NULL)
+				{
+					logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s", output);
+					free(output);
+				}
+			}
+			exit(EXIT_FAILURE);
+#endif
+		}
+		break;
+	}
 }
 
 int main(int argc, char *argv[])
@@ -89,7 +180,7 @@ int main(int argc, char *argv[])
 
 	int core_mask;
 	int rest_port, t_rest_port;
-	bool cli_auth, t_cli_auth, orchestrator_in_band, t_orchestrator_in_band, init_db = false;
+	bool cli_auth, t_cli_auth, orchestrator_in_band, t_orchestrator_in_band;
 	char *config_file_name = new char[BUFFER_SIZE];
 	set<string> physical_ports;
 	char *nffg_file_name = new char[BUFFER_SIZE], *t_nffg_file_name = NULL;
@@ -103,14 +194,13 @@ int main(int argc, char *argv[])
 	char *un_interface = new char[BUFFER_SIZE], *t_un_interface = NULL;
 	char *un_address = new char[BUFFER_SIZE], *t_un_address = NULL;
 	char *ipsec_certificate = new char[BUFFER_SIZE], *t_ipsec_certificate = NULL;
-	char *pwd = new char[BUFFER_SIZE];
 
 	string s_un_address;
 	string s_ipsec_certificate;
 
 	strcpy(config_file_name, DEFAULT_FILE);
 
-	if(!parse_command_line(argc,argv,&core_mask,&config_file_name,&init_db,&pwd))
+	if(!parse_command_line(argc,argv,&core_mask,&config_file_name))
 		exit(EXIT_FAILURE);
 
 	if(!parse_config_file(config_file_name,&t_rest_port,&t_cli_auth,&t_nffg_file_name,physical_ports,&t_descr_file_name,&t_client_name,&t_broker_address,&t_key_path,&t_orchestrator_in_band,&t_un_interface,&t_un_address,&t_ipsec_certificate))
@@ -180,33 +270,17 @@ int main(int argc, char *argv[])
 		s_ipsec_certificate.erase(s_ipsec_certificate.size()-1,1);
 	}
 
-	//test if client authentication is required and if true initialize database
-	if(cli_auth)
-	{
-		//connect to database
-		dbm = new SQLiteManager(DB_NAME);
-		if(init_db)
-		{
-			if(!createDB(dbm, pwd))
-			{
-				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Database already initialized, argument \"--i\" cannot be specified");
-				exit(EXIT_FAILURE);
-			}
-		}
-	}
-	else
-	{
-		if(init_db)
-		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--i\" can appear only if authentication is required");
+	if(cli_auth) {
+		std::ifstream ifile(DB_NAME);
+
+		if(ifile)
+			dbm = new SQLiteManager(DB_NAME);
+		else {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Database does not exist!");
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Run 'db_initializer' at first.");
 			exit(EXIT_FAILURE);
 		}
 	}
-
-	//XXX: this code avoids that the program terminates when system() is executed
-	sigset_t mask;
-	sigfillset(&mask);
-	sigprocmask(SIG_SETMASK, &mask, NULL);
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
 	if(!DoubleDeckerClient::init(client_name, broker_address, key_path))
@@ -239,7 +313,29 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	signal(SIGINT,singint_handler);
+	// Ignore all signals but SIGSEGV and SIGINT
+	sigset_t mask;
+	sigfillset(&mask);
+	sigprocmask(SIG_SETMASK, &mask, NULL);
+
+	sigset_t unblock;
+	sigaddset(&unblock,SIGINT);
+#ifdef __x86_64__
+	sigaddset(&unblock,SIGSEGV);
+#endif
+	sigprocmask(SIG_UNBLOCK,&unblock,&mask);
+
+	/* Install signal handlers */
+	struct sigaction sa;
+
+	sa.sa_sigaction = &signal_handler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART | SA_SIGINFO;
+
+#ifdef __x86_64__
+	sigaction(SIGSEGV, &sa, NULL);
+#endif
+	sigaction(SIGINT, &sa, NULL);
 
 	printUniversalNodeInfo();
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is started!",MODULE_NAME);
@@ -250,7 +346,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file_name,bool *init_db,char **pwd)
+bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file_name)
 {
 	int opt;
 	char **argvopt;
@@ -259,7 +355,6 @@ bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file
 static struct option lgopts[] = {
 		{"c", 1, 0, 0},
 		{"d", 1, 0, 0},
-		{"i", 1, 0, 0},
 		{"h", 0, 0, 0},
 		{NULL, 0, 0, 0}
 	};
@@ -301,14 +396,6 @@ static struct option lgopts[] = {
 
 	   				arg_c++;
 	   			}
-				else if (!strcmp(lgopts[option_index].name, "i"))/* inserting admin password */
-	   			{
-					*init_db = true;
-
-					strcpy(*pwd, optarg);
-
-	   				arg_c++;
-	   			}
 				else if (!strcmp(lgopts[option_index].name, "h"))/* help */
 	   			{
 	   				return usage();
@@ -345,7 +432,7 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 	}
 
 	/* Physical ports */
-	char *tmp_physical_ports = new char[64];
+	char tmp_physical_ports[PATH_MAX];
 	strcpy(tmp_physical_ports, (char *)reader.Get("physical ports", "ports_name", "UNKNOWN").c_str());
 	if(strcmp(tmp_physical_ports, "UNKNOWN") != 0 && strcmp(tmp_physical_ports, "") != 0)
 	{
@@ -357,12 +444,11 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 			return false;
 		}
 		tmp_physical_ports[strlen(tmp_physical_ports)-1] = '\0';
-		tmp_physical_ports++;
-		
+
 		//the string just read must be tokenized
 		char delimiter[] = " ";
 	 	char * pnt;
-	 	pnt=strtok(tmp_physical_ports, delimiter);
+		pnt=strtok(tmp_physical_ports + 1, delimiter);
 	 	while(pnt!= NULL)
 	 	{
 	 		logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tphysical port: %s",pnt);
@@ -427,37 +513,6 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 	return true;
 }
 
-bool createDB(SQLiteManager *dbm, char *pass)
-{
-	/*
-	*
-	* Initializing user database
-	*
-	*/
-
-	unsigned char *hash_token = new unsigned char[HASH_SIZE];
-	char *hash_pwd = new char[BUFFER_SIZE];
-	char *tmp = new char[HASH_SIZE];
-	char *pwd = new char[HASH_SIZE];
-
-	if(dbm->createTable()){
-		strcpy(pwd, pass);
-
-		SHA256((const unsigned char*)pwd, sizeof(pwd) - 1, hash_token);
-
-		for (int i = 0; i < HASH_SIZE; i++) {
-			sprintf(tmp, "%x", hash_token[i]);
-			strcat(hash_pwd, tmp);
-	    	}
-
-		dbm->insertUsrPwd("admin", (char *)hash_pwd);
-
-		return true;
-	}
-
-	return false;
-}
-
 bool usage(void)
 {
 	stringstream message;
@@ -475,8 +530,6 @@ bool usage(void)
 	"        Mask that specifies which cores must be used for DPDK network functions. These   \n" \
 	"        cores will be allocated to the DPDK network functions in a round robin fashion   \n" \
 	"        (default is 0x2)                                                                 \n" \
-	"  --i admin_password                                                                     \n" \
-	"        Initialize local database and set the password for the default 'admin' user  	  \n" \
 	"  --h                                                                                    \n" \
 	"        Print this help.                                                                 \n" \
 	"                                                                                         \n" \
@@ -496,6 +549,10 @@ void printUniversalNodeInfo()
 
 logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "************************************");
 
+#ifdef __x86_64__
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The %s is executed on an x86_64 machine",MODULE_NAME);
+#endif
+
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	string vswitch = "xDPd";
 #endif
@@ -513,7 +570,7 @@ logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "****************************
 #ifdef VSWITCH_IMPLEMENTATION_ERFS
 	string vswitch = "ERFS";
 #endif
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* Virtual switch used: '%s'",vswitch.c_str());
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* Virtual switch used: '%s'", vswitch.c_str());
 
 	list<string> executionenvironment;
 #ifdef ENABLE_KVM
@@ -538,8 +595,7 @@ logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "****************************
 /**
 *	This function checks if the UN is properly configured.
 */
-bool doChecks(void)
-{
+bool doChecks(void) {
 
 #ifdef VSWITCH_IMPLEMENTATION_OFCONFIG
 	logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The support to OFCONFIG is deprecated.");
@@ -548,13 +604,10 @@ bool doChecks(void)
 	return true;
 }
 
-void terminateRestServer()
-{
-	try
-	{
+void terminateRestServer() {
+	try {
 		RestServer::terminate();
-	}catch(...)
-	{
+	} catch(...) {
 		//Do nothing, since the program is terminating
 	}
 }

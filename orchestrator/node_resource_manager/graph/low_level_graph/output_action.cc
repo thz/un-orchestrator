@@ -3,14 +3,20 @@
 namespace lowlevel
 {
 
-Action::Action(uint32_t port_id)
+Action::Action(unsigned int port_id)
 	: type(openflow::OFPAT_OUTPUT), port_id(port_id), is_local_port(false), is_normal(false)
 {
 
 }
 
-Action::Action(bool is_local_port, bool is_normal = false)
-	: type(openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(is_normal)
+Action::Action(bool is_local_port)
+	: type(openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(false)
+{
+
+}
+
+Action::Action(bool is_local_port, bool is_normal)
+		: type(openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(is_normal)
 {
 
 }

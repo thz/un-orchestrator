@@ -1,6 +1,6 @@
 #include "graph_translator.h"
 
-lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0, string un_interface, map<string, map <string, unsigned int> > internalLSIsConnections, bool orchestrator_in_band, bool creating)
+lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0, map<string, map <string, unsigned int> > internalLSIsConnections, bool creating)
 {
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Creating rules for LSI-0");
 
@@ -12,32 +12,6 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 	list<highlevel::EndPointGre> eps = tenantLSI->getEndpointsPorts();
 
 	lowlevel::Graph lsi0Graph;
-
-	//if orchestrator in bound install the default rule on LSI-0 otherwise skip this code
-	if(orchestrator_in_band)
-	{
-		unsigned int i = 0;
-		for(list<highlevel::EndPointGre>::iterator it = eps.begin(); it != eps.end(); it++)
-		{
-			//Translate the match
-			lowlevel::Match lsi0Match;
-			map<string,unsigned int>::iterator translation = ports_lsi0.find(un_interface);
-
-			lsi0Match.setGreKey((char *)it->getGreKey().c_str());
-			lsi0Match.setInputPort(translation->second);
-
-			lowlevel::Action lsi0Action(true);
-
-			//Create the rule and add it to the graph
-			//The rule ID is created as follows  highlevelGraphID_hlrID
-			stringstream newRuleID;
-			newRuleID << graph->getID() << "_" << i;
-			lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),HIGH_PRIORITY);
-			lsi0Graph.addRule(lsi0Rule);
-
-			i++;
-		}
-	}
 
 	list<highlevel::Rule> highLevelRules = graph->getRules();
 	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "The high level graph contains %d rules",highLevelRules.size());
@@ -490,7 +464,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 	map<string,unsigned int> ports_lsi0 = lsi0->getPhysicalPorts();
 
 	vector<VLink> tenantVirtualLinks = tenantLSI->getVirtualLinks();//FIXME: a map <emulated port name, vlink> would be better
-	set<string> tenantNetworkFunctions = tenantLSI->getNetworkFunctionsName();
+	set<string> tenantNetworkFunctions = tenantLSI->getNetworkFunctionsId();
 	list<highlevel::EndPointGre> tenantEndpoints = tenantLSI->getEndpointsPorts();
 
 	lowlevel::Graph tenantGraph;

@@ -4,6 +4,7 @@ zactor_t *DoubleDeckerClient::client = NULL;
 bool DoubleDeckerClient::connected = false;
 list<publish_t> DoubleDeckerClient::messages;
 pthread_mutex_t DoubleDeckerClient::connected_mutex;
+bool DoubleDeckerClient::run_loop = true;
 
 bool DoubleDeckerClient::init(char *clientName, char *brokerAddress, char *keyPath)
 {
@@ -15,11 +16,12 @@ bool DoubleDeckerClient::init(char *clientName, char *brokerAddress, char *keyPa
 	pthread_mutex_init(&connected_mutex, NULL);
 
 	//Start and register a DD client on the brocker
-	client = start_ddactor((int)1, clientName, "public", brokerAddress,keyPath);
+	client = ddactor_new(clientName, brokerAddress,keyPath);
 
 	//Start a new thread that waits for events
 	pthread_t thread[1];
 	pthread_create(&thread[0],NULL,loop,NULL);
+	pthread_setname_np(thread[0],"DoubleDeckerClient");
 
 	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Module inizialized!");
 
@@ -28,11 +30,13 @@ bool DoubleDeckerClient::init(char *clientName, char *brokerAddress, char *keyPa
 
 void *DoubleDeckerClient::loop(void *param)
 {
-	while(true)
+	while(run_loop)
 	{
 		//receive a message from the DD
 		zmsg_t *msg = zmsg_recv (client);
-		zmsg_print(msg);
+		if(msg == NULL)
+			//The zmsg_recv has been unlocked by a signal
+			continue;
 		//retrieve the event
 		char *event = zmsg_popstr(msg);
 
@@ -76,14 +80,15 @@ void *DoubleDeckerClient::loop(void *param)
 			signal(SIGALRM,sigalarm_handler);
 			alarm(1);
 			pthread_exit(NULL);
-	    }
+		}
 	}
-
 	return NULL;
 }
 
 void DoubleDeckerClient::terminate()
 {
+	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Stopping the Double Decker client");
+	run_loop = false;
 	zsock_send(client, "s", "$TERM");
 	zactor_destroy (&client);
 	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "The connection with the Double Decker is terminated");

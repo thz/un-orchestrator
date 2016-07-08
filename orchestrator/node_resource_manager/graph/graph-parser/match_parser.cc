@@ -2,14 +2,14 @@
 
 string MatchParser::graphID(string name_port)
 {
-	return nfName(name_port);
+	return nfId(name_port);
 }
 
-string MatchParser::nfName(string name_port)
+string MatchParser::nfId(string id_port)
 {
 	char delimiter[] = ":";
 	char tmp[BUFFER_SIZE];
-	strcpy(tmp,name_port.c_str());
+	strcpy(tmp,id_port.c_str());
 	char *pnt=strtok(tmp, delimiter);
 	while( pnt!= NULL )
 	{
@@ -170,7 +170,7 @@ bool MatchParser::validateIpv4Netmask(const string &netmask)
 	return true;
 }
 
-bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, /*map<string,set<unsigned int> > &nfs,*/ map<string,string > &nfs_id, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, highlevel::Graph &graph)
+bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, highlevel::Graph &graph)
 {
 	bool foundOne = false;
 	bool foundEndPointID = false, foundProtocolField = false, definedInCurrentGraph = false;
@@ -199,7 +199,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			string v_id;
 			string graph_id;
 			const char *port_in_name_tmp = port_in_name.c_str();
-			char vnf_name_tmp[BUFFER_SIZE];
+			char vnf_id_tmp[BUFFER_SIZE];
 
 			//Check the name of port
 			char delimiter[] = ":";
@@ -232,14 +232,14 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 					case 1:
 						if(p_type == VNF_PORT_TYPE)
 						{
-							strcpy(vnf_name_tmp,nfs_id[pnt].c_str());
-							strcat(vnf_name_tmp,":");
+							strcpy(vnf_id_tmp,pnt);
+							strcat(vnf_id_tmp,":");
 						}
 						break;
 					case 3:
 						if(p_type == VNF_PORT_TYPE)
 						{
-							strcat(vnf_name_tmp,pnt);
+							strcat(vnf_id_tmp,pnt);
 						}
 				}
 
@@ -250,10 +250,10 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			//VNFs port type
 			if(p_type == VNF_PORT_TYPE)
 			{
-				//convert char *vnf_name_tmp to string vnf_name
-				string vnf_name(vnf_name_tmp, strlen(vnf_name_tmp));
+				//convert char *vnf_id_tmp to string vnf_name
+				string vnf_name(vnf_id_tmp, strlen(vnf_id_tmp));
 
-				string nf_name = nfName(vnf_name);
+				string nf_name = nfId(vnf_name);
 				char *tmp_vnf_name = new char[BUFFER_SIZE];
 				strcpy(tmp_vnf_name, (char *)vnf_name.c_str());
 				unsigned int port = nfPort(string(tmp_vnf_name));
@@ -261,7 +261,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 
 				if(nf_name == "" || !is_port)
 				{
-					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" is not valid. It must be in the form \"name:port\"",vnf_name_tmp);
+					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" is not valid. It must be in the form \"name:port\"",vnf_id_tmp);
 					return false;
 				}
 				/*nf port starts from 0 - here we want that the ID starts from 1*/
@@ -772,7 +772,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,IPv6_FLABEL,value.getString().c_str());
 			uint64_t ipv6FLabel;
-			if((sscanf(value.getString().c_str(),"%"SCNd64,&ipv6FLabel) != 1) || (ipv6FLabel > 4294967295) )
+			if((sscanf(value.getString().c_str(),"%"SCNd64,&ipv6FLabel) != 1) || (ipv6FLabel > 4294967295UL) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",ARP_OPCODE,value.getString().c_str());
 				return false;

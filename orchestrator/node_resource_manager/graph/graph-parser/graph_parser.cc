@@ -2,8 +2,6 @@
 
 bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph, GraphManager *gm)
 {
-	//for each NF, contains the id
-	map<string, string> nfs_id;
 	//for each endpoint (interface), contains the id
 	map<string, string> iface_id;
 	//for each endpoint (internal), contains the internal-group id
@@ -146,9 +144,6 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNFS,_NAME,nf_value.getString().c_str());
 										foundName = true;
 										name = nf_value.getString();
-
-										nfs_id[id] = nf_value.getString();
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\"",id.c_str(), nfs_id[id].c_str());
 									}
 									else if(nf_name == VNF_TEMPLATE)
 									{
@@ -159,7 +154,6 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									else if(nf_name == _ID)
 									{
 										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNFS,_ID,nf_value.getString().c_str());
-
 										//store value of VNF id
 										id.assign(nf_value.getString().c_str());
 									}
@@ -811,7 +805,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									{
 										try{
 											foundMatch = true;
-											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action)/*,nfs_ports_found*/,nfs_id,iface_id,internal_id,vlan_id,gre_id,graph))
+											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action)/*,nfs_ports_found*/,iface_id,internal_id,vlan_id,gre_id,graph))
 											{
 												return false;
 											}
@@ -876,7 +870,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 														string graph_id;
 														string realName;
 														const char *port_in_name_tmp = port_in_name.c_str();
-														char vnf_name_tmp[BUFFER_SIZE];
+														char vnf_id_tmp[BUFFER_SIZE];
 
 														//Check the name of port
 														char delimiter[] = ":";
@@ -911,14 +905,14 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																case 1:
 																	if(p_type == VNF_PORT_TYPE)
 																	{
-																		strcpy(vnf_name_tmp,nfs_id[pnt].c_str());
-																		strcat(vnf_name_tmp, ":");
+																		strcpy(vnf_id_tmp,pnt);
+																		strcat(vnf_id_tmp, ":");
 																	}
 																	break;
 																case 3:
 																	if(p_type == VNF_PORT_TYPE)
 																	{
-																		strcat(vnf_name_tmp,pnt);
+																		strcat(vnf_id_tmp,pnt);
 																	}
 															}
 
@@ -937,27 +931,27 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 														{
 															//This is an output action referred to a VNF port
 
-															//convert char *vnf_name_tmp to string vnf_name
-															string vnf_name(vnf_name_tmp, strlen(vnf_name_tmp));
+															//convert char *vnf_id_tmp to string vnf_id
+															string vnf_id(vnf_id_tmp, strlen(vnf_id_tmp));
 
-															logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,VNF,vnf_name.c_str());
+															logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,VNF,vnf_id.c_str());
 
-															string name = MatchParser::nfName(vnf_name);
-															char *tmp_vnf_name = new char[BUFFER_SIZE];
-															strcpy(tmp_vnf_name, (char *)vnf_name.c_str());
-															unsigned int port = MatchParser::nfPort(string(tmp_vnf_name));
-															bool is_port = MatchParser::nfIsPort(string(tmp_vnf_name));
+															string id = MatchParser::nfId(vnf_id);
+															char *tmp_vnf_id = new char[BUFFER_SIZE];
+															strcpy(tmp_vnf_id, (char *)vnf_id.c_str());
+															unsigned int port = MatchParser::nfPort(string(tmp_vnf_id));
+															bool is_port = MatchParser::nfIsPort(string(tmp_vnf_id));
 
-															if(name == "" || !is_port)
+															if(id == "" || !is_port)
 															{
-																logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" is not valid. It must be in the form \"name:port\"",vnf_name.c_str());
+																logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" is not valid. It must be in the form \"id:port\"",vnf_id.c_str());
 																return false;
 															}
 
 															/*nf port starts from 0 - here we want that they start from 1*/
 															port++;
 
-															action = new highlevel::ActionNetworkFunction(name, string(port_in_name_tmp), port);
+															action = new highlevel::ActionNetworkFunction(id, string(port_in_name_tmp), port);
 														}
 														//end-points port type
 														else if(p_type == EP_PORT_TYPE)

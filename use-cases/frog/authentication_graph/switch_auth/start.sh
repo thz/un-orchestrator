@@ -1,5 +1,5 @@
 #! /bin/bash
-sleep 10
+sleep 5
 
 if [ ! -d /dev/net ]; then
     su -c "mkdir -p /dev/net"
@@ -22,7 +22,7 @@ sleep 5
 
 while true
 do
-	sleep 2
+	sleep 1
 	for i in `ls /sys/class/net`
 	do
                 if [ $i != lo -a $i != 'ovs-system' -a $i != 'br-auth' -a $i != 'ovs-netdev' ]; then

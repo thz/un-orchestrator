@@ -22,7 +22,7 @@ bool Docker::isSupported(Description&)
 bool Docker::updateNF(UpdateNFIn uni)
 {
 	uint64_t lsiID = uni.getLsiID();
-	string nf_name = uni.getNfName();
+	string nf_name = uni.getNfId();
 	
 	list<unsigned int> newPortsToAdd = uni.getNewPortsToAdd();
 	unsigned int n_ports = newPortsToAdd.size();
@@ -63,7 +63,7 @@ bool Docker::updateNF(UpdateNFIn uni)
 bool Docker::startNF(StartNFIn sni)
 {
 	uint64_t lsiID = sni.getLsiID();
-	string nf_name = sni.getNfName();
+	string nf_name = sni.getNfId();
 
 	string uri_image = description->getURI();
 
@@ -153,7 +153,7 @@ bool Docker::startNF(StartNFIn sni)
 bool Docker::stopNF(StopNFIn sni)
 {
 	uint64_t lsiID = sni.getLsiID();
-	string nf_name = sni.getNfName();
+	string nf_name = sni.getNfId();
 
 	stringstream command;
 	command << STOP_DOCKER_NF << " " << lsiID << " " << nf_name;

@@ -715,7 +715,7 @@ string XDPDManager::prepareCreateNFPortsRequest(AddNFportsIn anpi)
 
 	Array nfs_array;
 	Object network_function;
-	network_function["name"] = anpi.getNFname();
+	network_function["name"] = anpi.getNfId();
 
 	nf_t type = anpi.getNFtype();
 
@@ -741,12 +741,12 @@ string XDPDManager::prepareCreateNFPortsRequest(AddNFportsIn anpi)
 			case VHOST_PORT:
 				//XXX xDPd does not exepct the port type, but the VNF type
 				type = DOCKER;
-				logger(ORCH_DEBUG_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",anpi.getNFname().c_str(),(NFType::toString(type)).c_str());
+				logger(ORCH_DEBUG_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Network function with id \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",anpi.getNfId().c_str(),(NFType::toString(type)).c_str());
 				continue;
 			case IVSHMEM_PORT:
 				//XXX xDPd does not exepct the port type, but the VNF type
 				type = DPDK;
-				logger(ORCH_DEBUG_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",anpi.getNFname().c_str(),(NFType::toString(type)).c_str());
+				logger(ORCH_DEBUG_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Network function with id \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",anpi.getNfId().c_str(),(NFType::toString(type)).c_str());
 				continue;
 			case USVHOST_PORT:
 				logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Port type not supported.");
@@ -819,7 +819,7 @@ AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object
 		    		if(n_name == "name")
 		    		{
 		    			name = n_value.getString();
-		    			if(name != anpi.getNFname())
+		    			if(name != anpi.getNfId())
 		    			{
 							logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required network function",CREATE_LSI,name.c_str());
 							throw XDPDManagerException();
@@ -899,7 +899,7 @@ AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object
 		throw XDPDManagerException();
 	}
 
-	AddNFportsOut *anpo = new AddNFportsOut(anpi.getNFname(),ports,ports_name_on_switch);
+	AddNFportsOut *anpo = new AddNFportsOut(anpi.getNfId(),ports,ports_name_on_switch);
 
 	return anpo;
 }
@@ -1183,7 +1183,7 @@ string XDPDManager::prepareDestroyNFPortsRequest(DestroyNFportsIn dnpi)
 	if( ports_array.size() == 0)
 	{
        	//error
-	    logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "It seems that NF '%s' does not have any port!",dnpi.getNFname().c_str());
+	    logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "It seems that NF '%s' does not have any port!",dnpi.getNfId().c_str());
 		assert(0);
 		throw XDPDManagerException();
 	}

@@ -78,7 +78,7 @@ protected:
 	*		endpoint gre -> NF:
 	*			This rule does not appear in LSI-0
 	*/
-	static lowlevel::Graph lowerGraphToLSI0(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0, string un_interface, map<string, map <string, unsigned int> > internalLSIsConnections, bool orchestrator_in_band = true, bool creating = true);
+	static lowlevel::Graph lowerGraphToLSI0(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0, map<string, map <string, unsigned int> > internalLSIsConnections, bool creating = true);
 
 	/**
 	*	@brief: translate an high level graph into a rules to be sent to

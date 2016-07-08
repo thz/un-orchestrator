@@ -2,10 +2,11 @@
 
 #include <sstream>
 
-static string nf_port_name(const string& nf_name, unsigned int port_id)
+
+static string nf_port_name(const string& nf_id, unsigned int port_id)
 {
 	stringstream ss;
-	ss << nf_name << "_" << port_id;
+	ss << nf_id << "_" << port_id;
 
 	return ss.str();
 }
@@ -21,13 +22,13 @@ LSI::LSI(string controllerAddress, string controllerPort, set<string> physical_p
 	//create NF ports (and give them names)
 	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Adding network function '%s' to the LSI",nf->getName().c_str());
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Adding network function with id '%s' to the LSI",nf->getId().c_str());
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "It contains the following ports: ");
 		list<unsigned int> nf_ports = nf->getPortsId();
 		for(list<unsigned int>::iterator port = nf_ports.begin(); port != nf_ports.end(); port++)
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t%d",*port);
 
-		addNF(nf->getName(), nf_ports, a_nfs_ports_type[nf->getName()]);
+		addNF(nf->getId(), nf_ports, a_nfs_ports_type[nf->getId()]);
 	}
 
 	//fill the list of gre endpoints
@@ -56,7 +57,7 @@ list<string> LSI::getPhysicalPortsName()
 	return names;
 }
 
-set<string> LSI::getNetworkFunctionsName()
+set<string> LSI::getNetworkFunctionsId()
 {
 	set<string> names;
 
@@ -76,11 +77,11 @@ map<string,unsigned int > LSI::getEndpointsPortsId()
 	return endpoints_ports_id;
 }
 
-list<string> LSI::getNetworkFunctionsPortNames(string nf)
+list<string> LSI::getNetworkFunctionsPortNames(string nf_id)
 {
 	list<string> names;
 
-	map<string, unsigned int> ports = network_functions[nf].ports_switch_id;
+	map<string, unsigned int> ports = network_functions[nf_id].ports_switch_id;
 
 	for(map<string, unsigned int>::iterator p = ports.begin(); p != ports.end(); p++)
 		names.push_back(p->first);
@@ -88,9 +89,9 @@ list<string> LSI::getNetworkFunctionsPortNames(string nf)
 	return names;
 }
 
-PortType LSI::getNetworkFunctionPortType(string nf, string port_name)
+PortType LSI::getNetworkFunctionPortType(string nf_id, string port_name)
 {
-	map<string, nfData>::iterator nf_it = network_functions.find(nf);
+	map<string, nfData>::iterator nf_it = network_functions.find(nf_id);
 	if (nf_it == network_functions.end())
 		return UNDEFINED_PORT;
 
@@ -107,31 +108,31 @@ map<string, list< struct nf_port_info> > LSI::getNetworkFunctionsPortsInfo()
 	map<string, list<struct nf_port_info> > res;
 
 	for (map<string,struct nfData>::iterator nf_it = network_functions.begin(); nf_it != network_functions.end(); ++nf_it) {
-		const string& nf_name = nf_it->first;
+		const string& nf_id = nf_it->first;
 		struct nfData& nf_data = nf_it->second;
 
 		list<unsigned int>& ports = nf_data.nf_ports_id;
 		list<struct nf_port_info> pi_list;
 		for (list<unsigned int>::iterator port_it = ports.begin(); port_it != ports.end(); ++port_it) {
-			string port_name = nf_port_name(nf_name, *port_it);
+			string port_name = nf_port_name(nf_id, *port_it);
 
 			struct nf_port_info pi;
 			pi.port_name = port_name;
-			pi.port_type = getNetworkFunctionPortType(nf_name, port_name);
+			pi.port_type = getNetworkFunctionPortType(nf_id, port_name);
 			pi.port_id = *port_it;
 			pi_list.push_back(pi); //each element contains the port name and the port type
 		}
-		res[nf_name] = pi_list;
+		res[nf_id] = pi_list;
 	}
 
 	return res;
 }
 
-map<unsigned int, string> LSI::getNetworkFunctionsPortsNameOnSwitchMap(string nf)
+map<unsigned int, string> LSI::getNetworkFunctionsPortsNameOnSwitchMap(string nf_id)
 {
 	map<unsigned int, string> res;
 
-	map<string, nfData>::iterator nf_it = network_functions.find(nf);	//Retrieve the info associated with the required network function
+	map<string, nfData>::iterator nf_it = network_functions.find(nf_id);	//Retrieve the info associated with the required network function
 	if (nf_it != network_functions.end()) {
 		struct nfData& nf_data = nf_it->second;
 
@@ -169,15 +170,15 @@ bool LSI::setPhysicalPortID(string port, uint64_t id)
 	return true;
 }
 
-bool LSI::setNfSwitchPortsID(string nf, map<string, unsigned int> translation)
+bool LSI::setNfSwitchPortsID(string nf_id, map<string, unsigned int> translation)
 {
 	//The network function must exist
-	assert(network_functions.count(nf) != 0);
-	if(network_functions.count(nf) == 0)
+	assert(network_functions.count(nf_id) != 0);
+	if(network_functions.count(nf_id) == 0)
 		return false;
 
 	//Retrieve the data associated with this network function
-	struct nfData& nf_data = network_functions[nf];
+	struct nfData& nf_data = network_functions[nf_id];
 
 	for(map<string, unsigned int>::iterator t = translation.begin(); t != translation.end(); t++)
 	{
@@ -220,16 +221,16 @@ bool LSI::setEndpointPortID(string ep, uint64_t id)
  * This thing is fundamental to implement the hotplug, where the first port created for sure does not
  * have ID equal to 1.
  */
-void LSI::setNetworkFunctionsPortsNameOnSwitch(string nf, map<string, unsigned int> names)
+void LSI::setNetworkFunctionsPortsNameOnSwitch(string nf_id, map<string, unsigned int> names)
 {
-	if(network_functions.count(nf) == 0)
+	if(network_functions.count(nf_id) == 0)
 		return;  //TODO: ERROR
 
-	struct nfData& nf_data = network_functions[nf];
+	struct nfData& nf_data = network_functions[nf_id];
 	
 
 	for (map<string, unsigned int>::iterator n_it = names.begin(); n_it != names.end(); ++n_it) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Setting the network names port of %s %d", n_it->first.c_str(), n_it->second);
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Setting the network names port of %s %d", n_it->first.c_str(), n_it->second);
 		nf_data.ports_name_on_switch.insert(map<unsigned int, string>::value_type(n_it->second, n_it->first));
 	}
 }
@@ -250,9 +251,9 @@ map<string,unsigned int> LSI::getPhysicalPorts()
 	return physical_ports;
 }
 
-map<string,unsigned int> LSI::getNetworkFunctionsPorts(string nf)
+map<string,unsigned int> LSI::getNetworkFunctionsPorts(string nf_id)
 {
-	struct nfData& nf_data = network_functions[nf];
+	struct nfData& nf_data = network_functions[nf_id];
 
 	return nf_data.ports_switch_id;
 }
@@ -390,15 +391,15 @@ void LSI::removeEndPointGrevlink(string endpoint)
 	endpoints_gre_vlinks.erase(it);
 }
 
-bool LSI::addNF(string nf_name, list< unsigned int> ports, const map<unsigned int, PortType>& a_nf_ports_type)
+bool LSI::addNF(string nf_id, list< unsigned int> ports, const map<unsigned int, PortType>& a_nf_ports_type)
 {
 	//TODO: this assert will not be valid when we will introduce the hotplug.
 	//In that case, this function should be modified so that the nfData (already existing) of the network
 	//function is retrieved and updated. 
 	nfData nf_data;	
-	if(network_functions.count(nf_name) != 0)
+	if(network_functions.count(nf_id) != 0)
 	{
-		nf_data = network_functions[nf_name];
+		nf_data = network_functions[nf_id];
 		nf_data.nf_ports_id.insert(nf_data.nf_ports_id.end(), ports.begin(), ports.end());
 	}
 	else
@@ -409,7 +410,7 @@ bool LSI::addNF(string nf_name, list< unsigned int> ports, const map<unsigned in
 	for (list< unsigned int>::iterator port_it = ports.begin(); port_it != ports.end(); ++port_it) {
 		unsigned int port_id = (*port_it);  // This is the VNF port id from the NF-FG ("my_vnf:1" -> 1)
 
-		string port_name = nf_port_name(nf_name, port_id);
+		string port_name = nf_port_name(nf_id, port_id);
 
 		nf_data.ports_switch_id[port_name] = 0;	// Until the switch assigns an OpenFlow ID to the NF ports
 
@@ -419,7 +420,7 @@ bool LSI::addNF(string nf_name, list< unsigned int> ports, const map<unsigned in
 		nf_data.ports_type[port_name] = pt_it->second;
 	}
 	
-	network_functions[nf_name] = nf_data;
+	network_functions[nf_id] = nf_data;
 
 	return true;
 }
@@ -453,9 +454,9 @@ void LSI::removeVlink(uint64_t ID)
 	return;
 }
 
-void LSI::removeNF(string nf)
+void LSI::removeNF(string nf_id)
 {
-	map<string, struct nfData>::iterator it =  network_functions.find(nf);
+	map<string, struct nfData>::iterator it =  network_functions.find(nf_id);
 	if (it != network_functions.end()) {
 		network_functions.erase(it);
 	}

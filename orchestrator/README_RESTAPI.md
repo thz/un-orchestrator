@@ -5,10 +5,10 @@ that thanks to a small HTTP server embedded in the UN. The main REST commands to
 to interact with the un-orchestrator (e.g., deploy a new graph, update an existing graph,
 etc.) are detailed in this document.
 
-## Main REST commands accepted by the un-orchestrator
+## REST commands accepted by the un-orchestrator
 
-Deploy an NF-FG called ``myGraph'' (the NF-FG description must be based on the
-formalism defined in WP5 [README_NF-FG.md](README_NF-FG.md))
+### NF-FG API
+Deploy an NF-FG called ``myGraph'', according to the graph formalism described in [README_NF-FG.md](README_NF-FG.md):
 
     PUT /NF-FG/myGraph HTTP/1.1
     Content-Type : application/json
@@ -39,7 +39,7 @@ formalism defined in WP5 [README_NF-FG.md](README_NF-FG.md))
 				"name": "ingress",
 				"type": "interface",
 				"interface": {
-				  "interface": "eth1"
+				  "if-name": "eth1"
 				}
 			  }
 			],
@@ -86,7 +86,11 @@ Delete the graph with name "myGraph"
 
 	DELETE /NF-FG/myGraph HTTP/1.1
 
-## User authentication
+Retrieve the description of all the graphs
+
+	GET /NF-FG HTTP/1.1
+
+### Authentication API
 
 The un-orchestrator supports user authentication, which has to be enabled through the configuration file of the module.
 In case this feature is turned on, all the interactions with the UN must start with an authentication message, which looks like the following:
@@ -106,7 +110,46 @@ In this way the UN will know the identity of the user and it will be able to che
 
 Users and permissions are stored in a local SQLite database.
 
-## Send commands to the un-orchestrator
+### Groups API
+
+Create a new users group called 'myGroup'
+
+	PUT /groups/myGroup HTTP/1.1
+	
+Delete an existing group called 'myGroup'
+
+	DELETE /groups/myGroup HTTP/1.1
+	
+Retrieve the information about all the groups
+
+	GET /groups HTTP/1.1
+
+### Users API
+
+Create a new user called 'myUser', specifing the group the user belongs to
+
+    POST /users/myUser	HTTP/1.1
+    Content-Type : application/json
+
+    {
+        "password":"sample_pwd",
+        "group":"sample_group"
+    }
+    
+Retrieve the information the users called 'myUser'
+
+	GET /users/myUser HTTP/1.1
+	
+Delete the users called 'myUser'
+
+	DELETE /users/myUser HTTP/1.1
+	
+Retrieve the information about all the users
+
+	GET /users HTTP/1.1
+	
+	
+## How to send commands to the un-orchestrator
 
 In order to interact with the un-orchestrator through its REST API, you can use
 your favorite REST tool (e.g., some nice plugins for Mozilla Firefox). Just in

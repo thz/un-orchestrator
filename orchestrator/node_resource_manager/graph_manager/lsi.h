@@ -97,7 +97,7 @@ private:
 	/**
 	*	@brief: NFs connected to the LSI.
 	*		The map is
-	*			<nf name, nfData >
+	*			<nf id, nfData >
 	*/
 	map<string, struct nfData>  network_functions;
 
@@ -148,12 +148,12 @@ public:
 	list<string> getPhysicalPortsName();
 	map<string,unsigned int> getPhysicalPorts();
 
-	set<string> getNetworkFunctionsName();
-	map<string,unsigned int> getNetworkFunctionsPorts(string nf);
-	list<string> getNetworkFunctionsPortNames(string nf);
-	PortType getNetworkFunctionPortType(string nf, string port);
+	set<string> getNetworkFunctionsId();
+	map<string,unsigned int> getNetworkFunctionsPorts(string nf_id);
+	list<string> getNetworkFunctionsPortNames(string nf_id);
+	PortType getNetworkFunctionPortType(string nf_id, string port);
 	map<string, list< struct nf_port_info> > getNetworkFunctionsPortsInfo();
-	map<unsigned int, string> getNetworkFunctionsPortsNameOnSwitchMap(string nf);
+	map<unsigned int, string> getNetworkFunctionsPortsNameOnSwitchMap(string nf_id);
 
 	list<uint64_t> getVirtualLinksRemoteLSI();
 	vector<VLink> getVirtualLinks();
@@ -182,17 +182,17 @@ public:
 protected:
 	void setDpid(uint64_t dpid);
 	bool setPhysicalPortID(string port, uint64_t id);
-	bool setNfSwitchPortsID(string nf, map<string, unsigned int>);
+	bool setNfSwitchPortsID(string nf_id, map<string, unsigned int>);
 	void setVLinkIDs(unsigned int position, unsigned int localID, unsigned int remoteID);
 	bool setEndpointPortID(string ep, uint64_t id);
 
-	void setNetworkFunctionsPortsNameOnSwitch(string nf, map<string, unsigned int> names);
+	void setNetworkFunctionsPortsNameOnSwitch(string nf_id, map<string, unsigned int> names);
 
 	int addVlink(VLink vlink);
 	void removeVlink(uint64_t ID);
 
-	bool addNF(string name, list< unsigned int> ports, const map<unsigned int, PortType>& nf_ports_type);
-	void removeNF(string nf);
+	bool addNF(string id, list< unsigned int> ports, const map<unsigned int, PortType>& nf_ports_type);
+	void removeNF(string nf_id);
 
 	void addEndpoint(highlevel::EndPointGre);
 	void removeEndpoint(string ep);
