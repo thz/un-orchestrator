@@ -94,10 +94,10 @@ private:
 
 	static int doPost(struct MHD_Connection *connection, const char *url, void **con_cls, bool client_auth);
 
-	static bool parsePostBody(struct connection_info_struct &con_info,char **user, char **pwd);
+	static bool parsePostBody(struct connection_info_struct &con_info,char *user, char *pwd);
 	static bool parsePostBody(struct connection_info_struct &con_info,char **user, char **pwd, char **group);
 
-	static bool parseLoginForm(Value value, char **user, char **pwd);
+	static bool parseLoginForm(Value value, char *user, char *pwd);
 	static bool parseUserCreationForm(Value value, char **pwd, char **group);
 
 	static int doPut(struct MHD_Connection *connection, const char *url, void **con_cls);

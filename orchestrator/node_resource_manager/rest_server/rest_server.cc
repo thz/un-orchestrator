@@ -190,7 +190,7 @@ int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
 
 	int ret = 0, rc = 0;
 	struct MHD_Response *response;
-	char *username, *password;
+	char username[BUFFER_SIZE], password[BUFFER_SIZE];
 	unsigned char hash_token[HASH_SIZE], temp[BUFFER_SIZE];
 	char hash_pwd[BUFFER_SIZE], nonce[BUFFER_SIZE], timestamp[BUFFER_SIZE], tmp[BUFFER_SIZE], user_tmp[BUFFER_SIZE];
 
@@ -212,17 +212,12 @@ int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
 		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 	}
 
-	if (!parsePostBody(*con_info, &username, &password)) {
+	if (!parsePostBody(*con_info, username, password)) {
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Login error: Malformed content");
 		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 	}
 
 	try {
-
-		if (username == NULL || password == NULL) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Client unathorized!");
-			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
-		}
 
 		SHA256((const unsigned char*) password, strlen(password), hash_token);
 
@@ -379,7 +374,7 @@ int RestServer::createUser(char *username, struct MHD_Connection *connection, co
 
 
 bool RestServer::parsePostBody(struct connection_info_struct &con_info,
-		char **user, char **pwd) {
+		char *user, char *pwd) {
 	Value value;
 	read(con_info.message, value);
 	return parseLoginForm(value, user, pwd);
@@ -392,7 +387,7 @@ bool RestServer::parsePostBody(struct connection_info_struct &con_info,
 	return parseUserCreationForm(value, pwd, group);
 }
 
-bool RestServer::parseLoginForm(Value value, char **user, char **pwd) {
+bool RestServer::parseLoginForm(Value value, char *user, char *pwd) {
 	try {
 		Object obj = value.getObject();
 
@@ -405,10 +400,10 @@ bool RestServer::parseLoginForm(Value value, char **user, char **pwd) {
 
 			if (name == USER) {
 				foundUser = true;
-				(*user) = (char *) value.getString().c_str();
+				strcpy(user,value.getString().c_str());
 			} else if (name == PASS) {
 				foundPwd = true;
-				(*pwd) = (char *) value.getString().c_str();
+				strcpy(pwd, value.getString().c_str());
 			} else {
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
 						"Invalid key: %s", name.c_str());
