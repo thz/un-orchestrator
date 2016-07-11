@@ -21,7 +21,9 @@ Native::Native(){
 		xmlDocPtr doc=NULL;
 
 		//Validate the configuration file with the schema
-		schema_doc = xmlReadFile(CAPABILITIES_XSD, NULL, XML_PARSE_NONET);
+		std::stringstream ss_xsd;
+                ss_xsd << getenv("un_script_path") <<  CAPABILITIES_XSD;
+		schema_doc = xmlReadFile(ss_xsd.str().c_str(), NULL, XML_PARSE_NONET);
 		if (schema_doc == NULL){
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "The schema cannot be loaded or is not well-formed.");
 			/*Free the allocated resources*/
@@ -53,7 +55,10 @@ Native::Native(){
 			throw new NativeException();
 		}
 
-		doc = xmlParseFile(CAPABILITIES_FILE); /*Parse the XML file*/
+		std::stringstream ss;
+		ss << getenv("un_script_path") <<  CAPABILITIES_FILE;
+
+		doc = xmlParseFile(ss.str().c_str()); /*Parse the XML file*/
 		if (doc==NULL){
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "XML file '%s' parsing failed.", CAPABILITIES_FILE);
 			/*Free the allocated resources*/
@@ -135,7 +140,7 @@ bool Native::updateNF(UpdateNFIn uni)
 	uri << uri_script;
 
 	std::stringstream command;
-	command << UPDATE_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
+	command << getenv("un_script_path") << UPDATE_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
 
 	//create the names of the ports
 	for(list<unsigned int>::iterator pn = newPorts.begin(); pn != newPorts.end(); pn++)
@@ -177,7 +182,7 @@ bool Native::startNF(StartNFIn sni) {
 	uri << uri_script;
 
 	std::stringstream command;
-	command << PULL_AND_RUN_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
+	command << getenv("un_script_path") << PULL_AND_RUN_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
 
 	//create the names of the ports
 	for(std::map<unsigned int, std::string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)
@@ -200,7 +205,7 @@ bool Native::stopNF(StopNFIn sni) {
 	std::string nf_name = sni.getNfId();
 
 	std::stringstream command;
-	command << STOP_NATIVE_NF << " " << lsiID << " " << nf_name;
+	command << getenv("un_script_path") << STOP_NATIVE_NF << " " << lsiID << " " << nf_name;
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 	int retVal = system(command.str().c_str());
