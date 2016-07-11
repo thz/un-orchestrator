@@ -696,6 +696,7 @@ AddNFportsOut *XDPDManager::addNFPorts(AddNFportsIn anpi)
 //	lsi.addNF(nf.first, nf.second);
 
 	string answer = sendMessage(prepareCreateNFPortsRequest(anpi));
+	map<string, unsigned int> port_name_id_in_graph;
 
 	Value value;
 	read( answer, value );
@@ -706,9 +707,14 @@ AddNFportsOut *XDPDManager::addNFPorts(AddNFportsIn anpi)
 		throw XDPDManagerException();
 
 	AddNFportsOut *anpo = 0;
+	list<struct nf_port_info> port_list = anpi.getNetworkFunctionsPorts();
+	for(list<struct nf_port_info>::iterator port = port_list.begin(); port != port_list.end(); port++)
+	{
+		port_name_id_in_graph[port->port_name] = port->port_id;
+	}
 	try
 	{
-		anpo = parseCreateNFPortsResponse(anpi,obj);
+		anpo = parseCreateNFPortsResponse(anpi,obj, port_name_id_in_graph);
 	} catch(...) {
 	//	lsi.removeNF(nf.first); lo dovro' fare fuori (posso evitarlo, se faccio la add dopo a sta chiamata)
 		throw;
@@ -785,11 +791,12 @@ string XDPDManager::prepareCreateNFPortsRequest(AddNFportsIn anpi)
  	return ss.str();
 }
 
-AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object message)
+AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object message, map<string, unsigned int> port_name_id_in_graph)
 {
 	bool foundNFs = false;
 	map<string, unsigned int> ports;
 	list<string> ports_name_on_switch;
+	map<string, unsigned int> port_names_and_id;
 
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
 	{
@@ -883,6 +890,8 @@ AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object
 							stringstream pnos;
 							pnos << anpi.getDpid() << "_" << port_name;
 							ports_name_on_switch.push_back(pnos.str());
+							unsigned int port_id_on_graph = port_name_id_in_graph[port_name];
+							port_names_and_id[pnos.str()] = port_id_on_graph;
 						}
 						if(ports_array.size() > 0)
 							foundPorts = true;
@@ -909,7 +918,7 @@ AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object
 		throw XDPDManagerException();
 	}
 
-	AddNFportsOut *anpo = new AddNFportsOut(anpi.getNfId(),ports,ports_name_on_switch);
+	AddNFportsOut *anpo = new AddNFportsOut(anpi.getNfId(),ports,ports_name_on_switch, port_names_and_id);
 
 	return anpo;
 }
