@@ -25,7 +25,10 @@ bool DoubleDeckerClient::init(char *_clientName, char *_brokerAddress, char *_ke
 	//Start a new thread that waits for events
 	pthread_t thread[1];
 	pthread_create(&thread[0],NULL,loop,NULL);
+#ifdef __x86_64__
+	//the following function is not available on all platforms
 	pthread_setname_np(thread[0],"DoubleDeckerClient");
+#endif
 
 	return true;
 }

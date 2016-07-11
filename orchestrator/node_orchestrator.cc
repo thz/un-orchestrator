@@ -132,9 +132,9 @@ void signal_handler(int sig, siginfo_t *info, void *secret)
 				}
 			}
 			exit(EXIT_FAILURE);
-#endif
 		}
 		break;
+#endif
 	}
 }
 

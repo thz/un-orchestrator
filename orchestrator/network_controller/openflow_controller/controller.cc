@@ -14,7 +14,10 @@ void Controller::start()
 {
 	pthread_t thread[1];
 	pthread_create(&thread[0],NULL,loop,this);
+#ifdef __x86_64__
+	//the following function is not available on all platforms
 	pthread_setname_np(thread[0],"Openflow-Controller");
+#endif
 }
 
 void Controller::handle_dpt_open(crofdpt& dpt)
