@@ -725,7 +725,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 
 			// Delete socket to be sure OVS can create it! (strange but needed)
 			stringstream prep_usvhost_cmd;
-			prep_usvhost_cmd << PREP_USVHOST_PORT << " " << port_name;
+			prep_usvhost_cmd << getenv("un_script_path") << PREP_USVHOST_PORT << " " << port_name;
 			logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", prep_usvhost_cmd.str().c_str());
 			int retVal = system(prep_usvhost_cmd.str().c_str());
 			retVal = retVal >> 8;
@@ -746,7 +746,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 			stringstream peer_port_name;
 			peer_port_name << port_name << ".d";
 			stringstream cmd_create_veth_pair;
-			cmd_create_veth_pair << CREATE_VETH_PAIR << " " << port_name << " " << peer_port_name.str();
+			cmd_create_veth_pair << getenv("un_script_path") << CREATE_VETH_PAIR << " " << port_name << " " << peer_port_name.str();
 			logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_create_veth_pair.str().c_str());
 
 			int retVal = system(cmd_create_veth_pair.str().c_str());
@@ -1017,7 +1017,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
     	if(is_nf_port && ((port_type == VHOST_PORT) || (port_type == VETH_PORT)))
     	{
     		stringstream command;
-		command << ACTIVATE_INTERFACE << " " << port_name;
+		command << getenv("un_script_path") << ACTIVATE_INTERFACE << " " << port_name;
 		logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 		int retVal = system(command.str().c_str());
 		retVal = retVal >> 8;

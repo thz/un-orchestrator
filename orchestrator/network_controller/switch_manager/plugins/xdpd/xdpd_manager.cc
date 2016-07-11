@@ -1243,7 +1243,7 @@ bool XDPDManager::attachWirelessPort(uint64_t dpid, string wirelessInterfaceName
 	logger(ORCH_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Attaching the wireless interface '%s'...",wirelessInterfaceName.c_str());
 
 	stringstream command;
-	command << ATTACH_WIRELESS_INTERFACE << " " << dpid << " " << wirelessInterfaceName;
+	command << getenv("un_script_path") << ATTACH_WIRELESS_INTERFACE << " " << dpid << " " << wirelessInterfaceName;
 	logger(ORCH_DEBUG_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 
 	int retVal = system(command.str().c_str());
@@ -1259,7 +1259,7 @@ void XDPDManager::detachWirelessPort(uint64_t dpid, string wirelessInterfaceName
 {
 	logger(ORCH_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Detaching the wireless interface '%s'...",wirelessInterfaceName.c_str());
 	stringstream command;
-	command << DETACH_WIRELESS_INTERFACE << " " << dpid << " " << wirelessInterfaceName;
+	command << getenv("un_script_path") << DETACH_WIRELESS_INTERFACE << " " << dpid << " " << wirelessInterfaceName;
 	logger(ORCH_DEBUG_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 	int retVal = system(command.str().c_str());
 	retVal += 1; //XXX: just to remove a warning
