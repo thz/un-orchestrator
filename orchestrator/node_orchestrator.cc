@@ -508,7 +508,7 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 
 	/* Path of the script file*/
 	char script_path[64];
-	strcpy(script_path, (char *)reader.Get("orchestrator", "script_path", "./").c_str());
+	strcpy(script_path, (char *)reader.Get("misc", "script_path", "./").c_str());
 	setenv("un_script_path", script_path, 1);
 
 	return true;
