@@ -78,7 +78,7 @@ private:
 	void parseDestroyVirtualLinkResponse(Object message);
 
 	string prepareCreateNFPortsRequest(AddNFportsIn anpi);
-	AddNFportsOut *parseCreateNFPortsResponse(AddNFportsIn anpi, Object message);
+	AddNFportsOut *parseCreateNFPortsResponse(AddNFportsIn anpi, Object message, map<string, unsigned int> port_name_id_in_graph);
 
 	string prepareDestroyNFPortsRequest(DestroyNFportsIn dnpi);
 	void parseDestroyNFPortsResponse(Object message);
