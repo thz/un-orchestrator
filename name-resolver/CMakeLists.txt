@@ -33,13 +33,12 @@ PROJECT(name-resolver)
 #     http://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html
 #
 
-IF(CMAKE_COMPILER_IS_GNUCXX)
-        ADD_DEFINITIONS(-Wall -Werror -Wno-write-strings -mvect8-ret-in-mem -march=corei7-avx -O3)# -fbranch-probabilities)
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
-IF(CMAKE_COMPILER_IS_GNUCC)
-        ADD_DEFINITIONS(-Wall -Werror -Wno-write-strings -mvect8-ret-in-mem -march=corei7-avx -O3)# -fbranch-probabilities)
-ENDIF(CMAKE_COMPILER_IS_GNUCC)
-
+IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
+	ADD_DEFINITIONS(-Wall -Werror -Wno-write-strings -O3)
+	IF(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+		ADD_DEFINITIONS(-mvect8-ret-in-mem -march=corei7-avx)# -fbranch-probabilities)
+	ENDIF()
+ENDIF()
 
 # Rather complicated CMake code for setting the logging level
 SET(LOGGING_LEVEL "ORCH_WARNING" CACHE STRING "Orchestrator logging levels: ORCH_DEBUG, ORCH_DEBUG_INFO, ORCH_WARNING, ORCH_ERROR, ORCH_INFO")
