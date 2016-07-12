@@ -664,8 +664,6 @@ int RestServer::httpResponse(struct MHD_Connection *connection, int code) {
 }
 
 int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, const char *method, const char *url) {
-	char delimiter[] = "/";
-	char *generic_resource = NULL, *resource = NULL, *extra = NULL;
 	int ret = 0;
 
 	user_info_t *usr = NULL;
@@ -723,30 +721,47 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 		}
 	}
 
+	// check for invalid URL
+	assert(url && url[0]=='/'); // neither NULL nor empty
+
 	// Fetch from URL the generic resource name, resource name and extra info
-	generic_resource = strtok((char *) url, delimiter);
-	resource = strtok(NULL, delimiter);
-	extra = strtok(NULL, delimiter);
+	std::string generic_resource, resource, extra;
+	std::stringstream urlstream(url+1); // +1 to skip first "/"
+	if (getline(urlstream, generic_resource, '/'))
+		if (getline(urlstream, resource, '/'))
+			if (getline(urlstream, extra, '/')) {}
 
 	// Fetch user information
 	if(dbmanager != NULL)
 		usr = dbmanager->getUserByToken(token);
 
 	// If operation on a generic resource (e.g. /NF-FG)
-	if(generic_resource != NULL && resource == NULL && extra == NULL)
-		ret = doOperationOnResource(connection, con_info, usr, method, generic_resource);
+	if(!generic_resource.empty() && resource.empty() && extra.empty())
+		ret = doOperationOnResource(connection, con_info, usr, method,
+				generic_resource.c_str());
 
 	// If operation on a single resource (e.g. /NF-FG/myGraph) 
-	else if(generic_resource != NULL && resource != NULL && extra == NULL)
-		ret = doOperationOnResource(connection, con_info, usr, method, generic_resource, resource);
+	else if(!generic_resource.empty() && !resource.empty() && extra.empty())
+		ret = doOperationOnResource(connection, con_info, usr, method,
+				generic_resource.c_str(), resource.c_str());
 
 	// If operation on a specific feature of a single resource (e.g. /NF-FG/myGraph/flowID)
-	else
-		ret = doOperationOnResource(connection, con_info, usr, method, generic_resource, resource, extra);
+	else if(!generic_resource.empty() && !resource.empty() && !extra.empty())
+		ret = doOperationOnResource(connection, con_info, usr, method,
+				generic_resource.c_str(), resource.c_str(), extra.c_str());
+
+	// all other requests (e.g. a request to "/") --> 404
+	else {
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Returning 404 for %s request on %s", method, url);
+		return httpResponse(connection, MHD_HTTP_NOT_FOUND);
+	}
 
 	/*
-	 * The usr variable points to a memory space that is allocated inside the isAuthenticated() method,
+	 * The usr variable points to a memory space that is allocated inside the getUserByToken() method,
 	 * by using malloc(), so I have to free that memory.
+	 * FIXME, this needs to be changed, as the struct
+	 * members of usr are only valid because we leak that
+	 * sqlite statment there...
 	 */
 	if(usr != NULL)
 		free(usr);
