@@ -9,7 +9,7 @@ command:
 Then, you have to run the script `deploy.yml` as follows:
 
 	$ cd [un-orchestrator]/utils
-	$ sudo ansible-playbook --ask-sudo-pass -i "localhost," -c local  deploy.yml --extra-vars "cores=1 docker=OFF native=OFF kvm=ON double_decker=OFF"
+	$ sudo ansible-playbook --ask-sudo-pass -i "localhost," -c local  deploy.yml --extra-vars "cores=1 docker=OFF native=OFF kvm=ON double_decker=OFF gui=OFF"
 	
 The previous command line includes some parameters that can be personalized before executing it:
 
@@ -18,5 +18,6 @@ The previous command line includes some parameters that can be personalized befo
   * `native`: if set to `ON`, enables the instantiation of native network functions
   * `kvm`: if set to `ON`, enables the QEMU/KVM execution environment
   * `double_decker`: if set to `ON`, enables the connection between the un-orchestrator and the Double Decker bus
+  * `gui`: if set to `ON`, also a nice GUI to visualize and deploy NF-FGs is installed
   
 **WARNING: the Docker execution environment is currently not installed by this script**
