@@ -32,7 +32,7 @@ void ComputeController::setCoreMask(uint64_t core_mask)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Mask of an available core: \"%d\"",cores[i]);
 }
 
-nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_name)
+nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_name, string name_resolver_ip, int name_resolver_port)
 {
 	try
  	{
@@ -52,8 +52,11 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 
 		Hints.ai_family= AF_INET;
 		Hints.ai_socktype= SOCK_STREAM;
+		
+		ostringstream oss;
+		oss << name_resolver_port;
 
-		if (sock_initaddress (NAME_RESOLVER_ADDRESS, NAME_RESOLVER_PORT, &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
+		if (sock_initaddress (name_resolver_ip.c_str(), oss.str().c_str(), &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
 		{
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error resolving given address/port (%s/%s): %s",  NAME_RESOLVER_ADDRESS, NAME_RESOLVER_PORT, ErrBuf);
 			return NFManager_SERVER_ERROR;
@@ -61,7 +64,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 
 		stringstream tmp;
 		tmp << "GET " << NAME_RESOLVER_BASE_URL << nf_name << " HTTP/1.1\r\n";
-		tmp << "Host: :" << NAME_RESOLVER_ADDRESS << ":" << NAME_RESOLVER_PORT << "\r\n";
+		tmp << "Host: :" << name_resolver_ip << ":" << name_resolver_port << "\r\n";
 		tmp << "Connection: close\r\n";
 		tmp << "Accept: */*\r\n\r\n";
 		string message = tmp.str();

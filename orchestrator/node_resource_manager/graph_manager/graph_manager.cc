@@ -8,8 +8,8 @@ void GraphManager::mutexInit()
 	pthread_mutex_init(&graph_manager_mutex, NULL);
 }
 
-GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_address,bool orchestrator_in_band,string un_interface,string ipsec_certificate) :
-	un_address(un_address), orchestrator_in_band(orchestrator_in_band), un_interface(un_interface), ipsec_certificate(ipsec_certificate), switchManager()
+GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_address,bool orchestrator_in_band,string un_interface,string ipsec_certificate, string name_resolver_ip, int name_resolver_port) :
+	un_address(un_address), orchestrator_in_band(orchestrator_in_band), un_interface(un_interface), ipsec_certificate(ipsec_certificate), nameResolverIP(name_resolver_ip), switchManager()
 {
 	//TODO: this code can be simplified. Why don't providing the set<string> to the switch manager?
 	set<CheckPhysicalPortsIn> phyPortsRequired;
@@ -29,6 +29,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	uint32_t controllerPort = nextControllerPort;
 	nextControllerPort++;
 	pthread_mutex_unlock(&graph_manager_mutex);
+	nameResolverPort = name_resolver_port;
 
 	ostringstream strControllerPort;
 	strControllerPort << controllerPort;
@@ -545,7 +546,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t* NF with id \"%s\" is already part of the graph; it is not retrieved again",nf->getId().c_str());
 			continue;
 		}
-		nf_manager_ret_t retVal = computeController->retrieveDescription(nf->getId(),nf->getName());
+		nf_manager_ret_t retVal = computeController->retrieveDescription(nf->getId(),nf->getName(), nameResolverIP, nameResolverPort);
 		if(retVal == NFManager_NO_NF)
 		{
 

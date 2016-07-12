@@ -128,10 +128,17 @@ private:
 	map<string,GraphInfo> tenantLSIs;
 
 	/**
+	*	Name resolver configuration parameters
+	**/
+	string nameResolverIP;
+	int nameResolverPort;
+
+	/**
 	*	The module that interacts with the virtual switch
 	*/
 	SWITCH_MANAGER_IMPLEMENTATION switchManager;
 
+	
 	/**
 	*	@brief: identify the virtual links required to implement the graph: each action
 	*		expressed on a NF port, associated with a match on a physical port, requires a
@@ -217,7 +224,7 @@ public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF
 	//(plus other fields)
 
-	GraphManager(int core_mask,set<string> physical_ports,string un_address,bool control,string un_interface,string ipsec_certificate);
+	GraphManager(int core_mask,set<string> physical_ports,string un_address,bool control,string un_interface,string ipsec_certificate, string name_resolver_ip, int name_resolver_port);
 	~GraphManager();
 
 	/**
