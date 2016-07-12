@@ -95,7 +95,13 @@ SET(SOURCES
 )
 
 INCLUDE_DIRECTORIES (
+	${CMAKE_BINARY_DIR}/externals/include/
 	/usr/include/libxml2
+)
+
+SET(CMAKE_SKIP_RPATH TRUE)
+LINK_DIRECTORIES(
+	${CMAKE_BINARY_DIR}/externals/lib/
 )
 
 # Create the executable
@@ -104,21 +110,14 @@ ADD_EXECUTABLE(
 	${SOURCES}
 )
 
-
-
-LINK_DIRECTORIES(
-	/usr/lib/
-	/usr/local/lib/
-	/usr/x86_64-linux-gnu/
-	/usr/lib/x86_64-linux-gnu/
-)
+ADD_DEPENDENCIES(name-resolver JSON_Spirit)
 
 
 TARGET_LINK_LIBRARIES( name-resolver
-	libpthread.so
-	libxml2.so
-	libjson_spirit.so
-	libmicrohttpd.so
-	-lrt
+	pthread
+	xml2
+	json_spirit
+	microhttpd
+	rt
 )
 
