@@ -58,7 +58,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 
 		if (sock_initaddress (name_resolver_ip.c_str(), oss.str().c_str(), &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
 		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error resolving given address/port (%s/%s): %s",  NAME_RESOLVER_ADDRESS, NAME_RESOLVER_PORT, ErrBuf);
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error resolving given address/port (%s/%d): %s",  name_resolver_ip.c_str(), name_resolver_port, ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
 
@@ -76,7 +76,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 		if ( (socket= sock_open(AddrInfo, 0, 0,  ErrBuf, sizeof(ErrBuf))) == sockFAILURE)
 		{
 			// AddrInfo is no longer required
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot contact the name resolver at \"%s:%s\"", NAME_RESOLVER_ADDRESS, NAME_RESOLVER_PORT);
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot contact the name resolver at \"%s:%d\"", name_resolver_ip.c_str(), name_resolver_port);
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s", ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
