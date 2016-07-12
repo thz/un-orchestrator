@@ -7,4 +7,3 @@
 [submodule "GUI"]
 	path = GUI
 	url = https://github.com/netgroup-polito/fg-gui
-	branch = valentin
