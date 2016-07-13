@@ -62,7 +62,6 @@ void terminateRestServer(void);
 /**
 *	Implementations
 */
-
 void signal_handler(int sig, siginfo_t *info, void *secret)
 {
 	switch(sig)
@@ -316,7 +315,6 @@ int main(int argc, char *argv[])
 	printUniversalNodeInfo();
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is started!",MODULE_NAME);
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Waiting for commands on TCP port \"%d\"",rest_port);
-
 	rofl::cioloop::get_loop().run();
 
 	return 0;
@@ -510,7 +508,7 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 	*ipsec_certificate = temp_ipsec_certificate;
 
 	name_resolver_ip = reader.Get("Name resolver", "ip_address", "localhost");
-	
+
 	*name_resolver_port = (int) reader.GetInteger("Name resolver", "port", 2626);
 
 	/* Path of the script file*/
