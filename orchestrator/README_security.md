@@ -12,7 +12,7 @@ These are the steps every REST request must pass in order to be processed by the
 
 Security and permissions with respect to the basic CRUD operations are managed through a local database, whose structure is depicted below:
 
-![database-structure](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/new_master/images/Database.JPG)
+![database-structure](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/Database.JPG)
 
 As shown in the diagram above, the local database is composed by the following tables:
 - Users: stores general information about the subscribed users in the node orchestrator
