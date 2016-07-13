@@ -1,4 +1,9 @@
 # Universal Node Repository Summary
+
+## Building status
+
+[![Build Status](https://api.travis-ci.org/netgroup-polito/un-orchestrator.png)](https://travis-ci.org/netgroup-polito/un-orchestrator)
+
 This repository contains the current implementation of the Universal Node and is divided in different sub-modules.
 Please check individual README's in each subfolder.
 
