@@ -510,7 +510,7 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 	*ipsec_certificate = temp_ipsec_certificate;
 
 	name_resolver_ip = reader.Get("Name resolver", "ip_address", "localhost");
-	
+
 	*name_resolver_port = (int) reader.GetInteger("Name resolver", "port", 2626);
 
 	/* Path of the script file*/
