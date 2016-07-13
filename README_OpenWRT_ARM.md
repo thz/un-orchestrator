@@ -300,5 +300,5 @@ After doing this, go on Network -> Interfaces. Here you have to create a new int
 
 This is an example of the final result:
 
-![interfaces-configuration](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/interfaces_configuration_OpenWRT_NetGear.png)
+![interfaces-configuration](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/interface_configuration_OpenWRT_NetGear.png)
 
