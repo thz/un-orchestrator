@@ -91,21 +91,21 @@ $ cp /usr/local/include/inttypes.h [OpenWrt-SDK-imola5-for-linux-x86_64-gcc-4.8.
 It may happen that the source files in the OpenWRT folder are not updated with the latest changes on UN. So you have to check it.
 ```sh
 $ cd [un-orchestrator]/orchestrator
-; copy the paths present in the SOURCES1 variable and past it in the SOURCES variable of
+; copy the paths present in the SOURCES1 variable of the CMakeLists.txt and past it in the SOURCES variable of
 [un-orchestrator]/contrib/OpenWrt/orchestrator/CMakeLists.txt
 
 $ cd [un-orchestrator]/name-resolver
-; copy the paths present in the SOURCES variable and past it in the SOURCES variable of
+; copy the paths present in the SOURCES variable of the CMakeLists.txt and past it in the SOURCES variable of
 [un-orchestrator]/contrib/OpenWrt/name-resolver/CMakeLists.txt
 ```
 Now you can move forward:
 
 ```sh
 $ cd [un-orchestrator]/contrib/OpenWrt/orchestrator
-$ cp * ../../orchestrator
+$ cp * ../../../orchestrator
 
 $ cd [un-orchestrator]/contrib/OpenWrt/name-resolver
-$ cp * ../../name-resolver
+$ cp * ../../../name-resolver
 
 
 $ cp -r [un-orchestrator]/name-resolver [OpenWrt-SDK-imola5-for-linux-x86_64-gcc-4.8.3_uClibc-0.9.33.2]/package
