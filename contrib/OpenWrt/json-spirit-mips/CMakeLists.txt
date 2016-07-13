@@ -57,7 +57,7 @@ ELSE()
   SET(JSON_SPIRIT_BUILD_TESTS ${JSON_SPIRIT_BUILD_TESTS} CACHE BOOL "If enabled, builds tests.")
 ENDIF()
 
-SET(Boost_ROOT [OPENWRT]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/boost_1_58_0)
+SET(Boost_ROOT [OPENWRT]/build_dir/target-mips_mips32_uClibc-0.9.33.2/boost_1_58_0)
 
 SET(Boost_INCLUDE_DIR ${Boost_ROOT}/ipkg-install/include)
 
