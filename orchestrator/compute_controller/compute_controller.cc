@@ -523,7 +523,8 @@ void ComputeController::checkSupportedDescriptions() {
 #ifdef ENABLE_NATIVE
 					//Manage NATIVE execution environment
 				case NATIVE:
-					NFsManager *nativeManager;
+				{
+					NFsManager *nativeManager = NULL;
 					try{
 						nativeManager = new Native();
 						if(nativeManager->isSupported(**descr)){
@@ -537,6 +538,7 @@ void ComputeController::checkSupportedDescriptions() {
 						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "exception %s has been thrown", e.what());
 						delete nativeManager;
 					}
+				}
 					break;
 #endif
 					//[+] Add here other implementations for the execution environment
@@ -618,8 +620,8 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 #ifdef ENABLE_NATIVE
 				//Manage NATIVE execution environment
 			case NATIVE:
-
-				NFsManager *nativeManager;
+			{
+				NFsManager *nativeManager = NULL;
 				try{
 
 					nativeManager = new Native();
@@ -634,6 +636,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "exception %s has been thrown", e.what());
 					delete nativeManager;
 				}
+			}
 				break;
 #endif
 				//[+] Add here other implementations for the execution environment
