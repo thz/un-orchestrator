@@ -5,9 +5,9 @@ BASE=`pwd`
 # build name resolver
 cd $BASE/name-resolver
 cmake .
-make -j
+make -j2
 
 # build orchestrator
 cd $BASE/orchestrator
 cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_KVM=$KVM -DENABLE_DOCKER=$DOCKER -DENABLE_NATIVE=$NATIVE -DENABLE_DPDK_PROCESSES=$DPDK -DVSWITCH_IMPLEMENTATION=$VSWITCH -DENABLE_DOUBLE_DECKER_CONNECTION=$DD -DENABLE_RESOURCE_MANAGER=$DD .
-make -j
+make -j2
