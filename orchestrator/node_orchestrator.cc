@@ -90,7 +90,7 @@ void signal_handler(int sig, siginfo_t *info, void *secret)
 			char **messages = (char **)NULL;
 			int i, trace_size = 0;
 			ucontext_t *uc = (ucontext_t *)secret;
-
+			char *ret;
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "");
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Got signal %d, faulty address is %p, from %p", sig, info->si_addr, uc->uc_mcontext.gregs[USE_REG]);
 
@@ -119,7 +119,10 @@ void signal_handler(int sig, siginfo_t *info, void *secret)
 				if (fp == NULL) {
 					printf("Failed to run command %s", syscom);
 				}
-				fgets(path, sizeof(path), fp);
+				ret = fgets(path, sizeof(path), fp);
+				if (ret != path) {
+					exit(EXIT_FAILURE);
+				}
 				fclose(fp);
 
 				output = strdup(path);
