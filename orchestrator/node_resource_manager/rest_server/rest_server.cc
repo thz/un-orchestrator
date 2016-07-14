@@ -24,6 +24,14 @@ bool RestServer::init(SQLiteManager *dbm, bool cli_auth, char *nffg_filename,int
 		return false;
 	}
 
+	client_auth = cli_auth;
+
+	if (client_auth) {
+		dbmanager = dbm;
+		dbmanager->cleanTables();
+		secmanager = new SecurityManager(dbmanager);
+	}
+
 	//Handle the file containing the first graph to be deployed
 	if (nffg_file_name != NULL) {
 		sleep(2); //XXX This give time to the controller to be initialized
@@ -32,14 +40,6 @@ bool RestServer::init(SQLiteManager *dbm, bool cli_auth, char *nffg_filename,int
 			delete gm;
 			return false;
 		}
-	}
-
-	client_auth = cli_auth;
-
-	if (client_auth) {
-		dbmanager = dbm;
-		dbmanager->cleanTables();
-		secmanager = new SecurityManager(dbmanager);
 	}
 
 	return true;
@@ -474,16 +474,14 @@ bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group) {
 
 
 int RestServer::createGraphFromFile(string toBeCreated) {
-	char graphID[BUFFER_SIZE];
-	strcpy(graphID, GRAPH_ID);
+	string graphID(BOOT_GRAPH);
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph ID: %s", graphID);
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph ID: %s", graphID.c_str());
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph content:");
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s",
 			toBeCreated.c_str());
 
-	string gID(graphID);
-	highlevel::Graph *graph = new highlevel::Graph(gID);
+	highlevel::Graph *graph = new highlevel::Graph(graphID);
 
 	if (!parseGraphFromFile(toBeCreated, *graph, true)) {
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Malformed content");
@@ -497,6 +495,9 @@ int RestServer::createGraphFromFile(string toBeCreated) {
 					"The graph description is not valid!");
 			return 0;
 		}
+		// If security is required, update database
+		if(dbmanager != NULL)
+			dbmanager->insertResource(BASE_URL_GRAPH, BOOT_GRAPH, ADMIN);
 	} catch (...) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__,
 				"An error occurred during the creation of the graph!");
@@ -1069,8 +1070,8 @@ int RestServer::deployNewGraph(struct MHD_Connection *connection, struct connect
 	struct MHD_Response *response;
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Received request for deploying %s/%s", BASE_URL_GRAPH, resource);
-
 	// If security is required, check whether the graph already exists in the database
+
 	/* this check prevent updates!
 	if(dbmanager != NULL && dbmanager->resourceExists(BASE_URL_GRAPH, resource)) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: cannot deploy an already existing graph in the database!");

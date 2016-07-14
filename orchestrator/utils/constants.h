@@ -213,5 +213,6 @@ extern ofp_version_t OFP_VERSION;
 *	Misc
 */
 #define DEFAULT_GRAPH 		"DEFAULT-GRAPH"
+#define BOOT_GRAPH 		"bootGraph"
 
 #endif //CONSTANTS_H_
