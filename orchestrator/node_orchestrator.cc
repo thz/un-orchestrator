@@ -53,7 +53,7 @@ SQLiteManager *dbm = NULL;
 *	Private prototypes
 */
 bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file);
-bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth, char **nffg_file_name, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate, string &name_resolver_ip, int *name_resolver_port);
+bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth,  map<string,string> &boot_graphs, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate, string &name_resolver_ip, int *name_resolver_port);
 
 bool usage(void);
 void printUniversalNodeInfo();
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 	bool cli_auth, t_cli_auth, orchestrator_in_band, t_orchestrator_in_band;
 	char *config_file_name = new char[BUFFER_SIZE];
 	set<string> physical_ports;
-	char *nffg_file_name = new char[BUFFER_SIZE], *t_nffg_file_name = NULL;
+	map<string,string> boot_graphs;
 	char *descr_file_name = new char[BUFFER_SIZE], *t_descr_file_name = NULL;
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
 	char *client_name = new char[BUFFER_SIZE];
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if(!parse_config_file(config_file_name,&t_rest_port,&t_cli_auth,&t_nffg_file_name,physical_ports,&t_descr_file_name,&t_client_name,&t_broker_address,&t_key_path,&t_orchestrator_in_band,&t_un_interface,&t_un_address,&t_ipsec_certificate, name_resolver_ip, &name_resolver_port))
+	if(!parse_config_file(config_file_name,&t_rest_port,&t_cli_auth,boot_graphs,physical_ports,&t_descr_file_name,&t_client_name,&t_broker_address,&t_key_path,&t_orchestrator_in_band,&t_un_interface,&t_un_address,&t_ipsec_certificate, name_resolver_ip, &name_resolver_port))
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
@@ -197,11 +197,6 @@ int main(int argc, char *argv[])
 		strcpy(descr_file_name, t_descr_file_name);
 	else
 		descr_file_name = NULL;
-
-	if(strcmp(t_nffg_file_name, "UNKNOWN") != 0)
-		strcpy(nffg_file_name, t_nffg_file_name);
-	else
-		nffg_file_name = NULL;
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
 	//The following parameters ara mandatory in case of DD connection
@@ -268,7 +263,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	if(!RestServer::init(dbm,cli_auth,nffg_file_name,core_mask,physical_ports,s_un_address,orchestrator_in_band,un_interface,ipsec_certificate, name_resolver_ip, name_resolver_port))
+	if(!RestServer::init(dbm,cli_auth,boot_graphs,core_mask,physical_ports,s_un_address,orchestrator_in_band,un_interface,ipsec_certificate, name_resolver_ip, name_resolver_port))
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
@@ -391,9 +386,8 @@ static struct option lgopts[] = {
 	return true;
 }
 
-bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, char **nffg_file_name, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate, string &name_resolver_ip, int *name_resolver_port)
+bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, map<string,string> &boot_graphs, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate, string &name_resolver_ip, int *name_resolver_port)
 {
-	nffg_file_name[0] = '\0';
 	*rest_port = REST_PORT;
 
 	/*
@@ -435,8 +429,36 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 		}
 	}
 
+	// nf-fgs : optional
+	string nffgs = reader.Get("initial graphs", "nffgs", "UNKNOWN");
+	if(nffgs != "UNKNOWN" && nffgs != "")
+	{
+		logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Initial graphs read from configuation file: %s",nffgs.c_str());
+		//the string must start and terminate respectively with [ and ]
+		if(nffgs.at(0)!='[' || nffgs.at(nffgs.length()-1)!=']')
+		{
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Wrong list initial graphs '%s'. They must be enclosed in '[...]'",nffgs.c_str());
+			return false;
+		}
+		nffgs=nffgs.substr(1,nffgs.length()-2);
+
+		//the string just read must be tokenized
+		istringstream iss(nffgs);
+		string graph;
+		while (getline(iss, graph, ' '))
+		{
+			istringstream iss(graph);
+			string graphName,graphFile;
+			getline(iss, graphName, '=');
+			getline(iss, graphFile, '=');
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Boot Graph: '%s' - '%s'",graphName.c_str(),graphFile.c_str());
+			boot_graphs[graphName]=graphFile;
+		}
+	}
+
 	// server_port : mandatory
 	int temp_rest_port = (int)reader.GetInteger("rest server", "server_port", -1);
+
 	if(temp_rest_port != -1)
 		*rest_port = temp_rest_port;
 	else
@@ -447,11 +469,6 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, c
 
 	// user_authentication : optional - false if not specified
 	*cli_auth = reader.GetBoolean("user authentication", "user_authentication", false);
-
-	/* first nf-fg file name */
-	char *temp_nf_fg = new char[64];
-	strcpy(temp_nf_fg, (char *)reader.Get("rest server", "nf-fg", "UNKNOWN").c_str());
-	*nffg_file_name = temp_nf_fg;
 
 	/* description file to export*/
 	char *temp_descr = new char[64];
