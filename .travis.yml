@@ -46,3 +46,8 @@ notifications:
  email:
   recipients:
    - universal_node@googlegroups.com
+
+branches:
+ only:
+  - master
+  - test
