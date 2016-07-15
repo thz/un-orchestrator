@@ -17,7 +17,7 @@ void ResourceManager::publishDescriptionFromFile(char *descr_file)
 	char *mesg = (char *) malloc(fsize + 1);
 	if(fread(mesg, fsize, 1, fp) != (size_t) fsize) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Something wrong while reading file '%s'.",descr_file);
-		free(mesg)
+		free(mesg);
 		fclose(fp);
 		return;
 	}
