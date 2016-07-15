@@ -38,7 +38,7 @@ It is exploited by the un-orchestrator each time that a NF must be started in or
 ## Virtualizer
 The Virtualizer is a module that enables the un-orchestrator to interact with the upper layers of the Unify architecture, by means of the NF-FG defined in UNIFY. It in fact converts that NF-FG in the native representation accepted by the un-orchestrator.
 
-The virtualizer operates as operates as follows:
+The virtualizer operates as follows:
 
   * it receives the NFFG commands through its northbound interface, based on the virtualizer library defined in UNIFY that implements the official NF-FG specification;
   * converts those commands in the NFFG formalism natively supported by the un-orchestrator;
