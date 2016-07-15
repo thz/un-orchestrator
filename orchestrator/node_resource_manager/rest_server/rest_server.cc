@@ -8,13 +8,8 @@ SecurityManager *secmanager = NULL;
 
 bool client_auth = false;
 
-bool RestServer::init(SQLiteManager *dbm, bool cli_auth, char *nffg_filename,int core_mask,set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string name_resolver_ip, int name_resolver_port)
+bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs,int core_mask,set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string name_resolver_ip, int name_resolver_port)
 {
-	char *nffg_file_name = new char[BUFFER_SIZE];
-	if (nffg_filename != NULL && strcmp(nffg_filename, "") != 0)
-		strcpy(nffg_file_name, nffg_filename);
-	else
-		nffg_file_name = NULL;
 
 	try
 	{
@@ -22,16 +17,6 @@ bool RestServer::init(SQLiteManager *dbm, bool cli_auth, char *nffg_filename,int
 
 	} catch (...) {
 		return false;
-	}
-
-	//Handle the file containing the first graph to be deployed
-	if (nffg_file_name != NULL) {
-		sleep(2); //XXX This give time to the controller to be initialized
-
-		if (!readGraphFromFile(nffg_file_name)) {
-			delete gm;
-			return false;
-		}
 	}
 
 	client_auth = cli_auth;
@@ -42,18 +27,29 @@ bool RestServer::init(SQLiteManager *dbm, bool cli_auth, char *nffg_filename,int
 		secmanager = new SecurityManager(dbmanager);
 	}
 
+	sleep(2); //XXX This give time to the controller to be initialized
+
+	//Handle the file containing the graphs to be deployed
+	for(map<string,string>::iterator iter = boot_graphs.begin(); iter!=boot_graphs.end(); iter++)
+	{
+		if (!readGraphFromFile(iter->first,iter->second)) {
+			delete gm;
+			return false;
+		}
+	}
+
 	return true;
 }
 
-bool RestServer::readGraphFromFile(char *nffg_filename) {
+bool RestServer::readGraphFromFile(const string &nffgResourceName, string &nffgFileName) {
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__,
-			"Considering the graph described in file '%s'", nffg_filename);
+			"Considering the graph described in file '%s'", nffgFileName.c_str());
 
 	std::ifstream file;
-	file.open(nffg_filename);
+	file.open(nffgFileName.c_str());
 	if (file.fail()) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__,
-				"Cannot open the file %s", nffg_filename);
+				"Cannot open the file %s", nffgFileName.c_str());
 		return false;
 	}
 
@@ -62,7 +58,7 @@ bool RestServer::readGraphFromFile(char *nffg_filename) {
 	while (std::getline(file, str))
 		stream << str << endl;
 
-	if (createGraphFromFile(stream.str()) == 0)
+	if (createGraphFromFile(nffgResourceName,stream.str()) == 0)
 		return false;
 
 	return true;
@@ -473,17 +469,14 @@ bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group) {
 }
 
 
-int RestServer::createGraphFromFile(string toBeCreated) {
-	char graphID[BUFFER_SIZE];
-	strcpy(graphID, GRAPH_ID);
+int RestServer::createGraphFromFile(const string &graphID, string toBeCreated) {
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph ID: %s", graphID);
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph ID: %s", graphID.c_str());
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph content:");
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s",
 			toBeCreated.c_str());
 
-	string gID(graphID);
-	highlevel::Graph *graph = new highlevel::Graph(gID);
+	highlevel::Graph *graph = new highlevel::Graph(graphID);
 
 	if (!parseGraphFromFile(toBeCreated, *graph, true)) {
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Malformed content");
@@ -497,6 +490,9 @@ int RestServer::createGraphFromFile(string toBeCreated) {
 					"The graph description is not valid!");
 			return 0;
 		}
+		// If security is required, update database
+		if(dbmanager != NULL)
+			dbmanager->insertResource(BASE_URL_GRAPH, graphID.c_str(), ADMIN);
 	} catch (...) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__,
 				"An error occurred during the creation of the graph!");
@@ -1069,8 +1065,8 @@ int RestServer::deployNewGraph(struct MHD_Connection *connection, struct connect
 	struct MHD_Response *response;
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Received request for deploying %s/%s", BASE_URL_GRAPH, resource);
-
 	// If security is required, check whether the graph already exists in the database
+
 	/* this check prevent updates!
 	if(dbmanager != NULL && dbmanager->resourceExists(BASE_URL_GRAPH, resource)) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: cannot deploy an already existing graph in the database!");

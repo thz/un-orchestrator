@@ -332,7 +332,7 @@ bool SQLiteManager::isGenericResource(const char *generic_resource) {
 	return (count > 0);
 }
 
-int SQLiteManager::insertResource(char *generic_resource, char *resource, char *owner) {
+int SQLiteManager::insertResource(char *generic_resource, const char *resource, char *owner) {
 	int rc = 0, res = 0, idx = 0;
 	char *owner_p = NULL, *group_p = NULL, *all_p = NULL, *admin_p = NULL, *sql = NULL;
 

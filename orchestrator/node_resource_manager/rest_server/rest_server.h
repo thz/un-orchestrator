@@ -107,10 +107,10 @@ private:
 
 	static int doDelete(struct MHD_Connection *connection,const char *url, void **con_cls);
 
-	static int createGraphFromFile(string toBeCreated);
+	static int createGraphFromFile(const string &graphID, string toBeCreated);
 	static bool parseGraphFromFile(string toBeCreated,highlevel::Graph &graph, bool newGraph);
 
-	static bool readGraphFromFile(char *nffg_filename);
+	static bool readGraphFromFile(const string &nffgResourceName, string &nffgFileName);
 
 	static bool isLoginRequest(const char *method, const char *url);
 
@@ -147,7 +147,7 @@ private:
 	static int httpResponse(struct MHD_Connection *connection, int code);
 
 public:
-	static bool init(SQLiteManager *dbm, bool cli_auth, char *nffg_filename,int core_mask, set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string name_resolver_ip, int name_resolver_port);
+	static bool init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs ,int core_mask, set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string name_resolver_ip, int name_resolver_port);
 
 	static void terminate();
 

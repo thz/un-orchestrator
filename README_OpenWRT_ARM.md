@@ -284,3 +284,21 @@ $ ln -s libsqlite3.so.0.8.6 libsqlite3.so
 $ cd /root
 $ opkg install node-orchestrator_0.0.1-1_bcm53xx.ipk
 ```
+
+### Port configuration on Netgear R6300
+
+To use UN on the router, you have to modify port configuration.
+
+Access the web interface of router typing its address in the browser bar. First, go on Network -> Switch. Here it will be the configuration of VLAN 1 and 2; you need to create three other VLAN typing the add button below, so that every physical port of the router refers to a different VLAN. For what concern the VLAN 1 that already existed, leave unchanged the field related to "port1" and "CPU", while for the other fields select "off": it means that VLAN 1 will be connected to port 1. Make the same procedure for all other VLAN connecting them to the corresponding port; don't forget to set the CPU field "tagged".
+
+This is an example of how the final configuration should be:
+
+![vlan-configuration](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/vlan_configuration_OpenWRT_NetGear.png)
+
+
+After doing this, go on Network -> Interfaces. Here you have to create a new interfaces for each new VLAN created in the previous step (so in this particular case you have to insert 3 interfacecs) clicking on “add new interface” button.
+
+This is an example of the final result:
+
+![interfaces-configuration](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/interface_configuration_OpenWRT_NetGear.png)
+

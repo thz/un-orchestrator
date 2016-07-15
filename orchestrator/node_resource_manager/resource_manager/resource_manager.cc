@@ -4,40 +4,28 @@ void ResourceManager::publishDescriptionFromFile(char *descr_file)
 {
 	assert(descr_file != NULL);
 
-	char c, *mesg = "";
-
-	FILE *fp = fopen(descr_file, "r");
-	if(fp == NULL)
+	FILE *fp = fopen(descr_file, "rb");
+	if(fp == NULL) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Something wrong while opening file '%s'.",descr_file);
-
-	int i = 0, n = 0;
-	while(fscanf(fp, "%c", &c) != EOF)
-		i++;
-
-	n = i;
-
-	mesg = (char *)calloc(n, sizeof(char));
-
-	fclose(fp);
-
-	//FIXME: instead of closing the file and opening it again immediately, I think that there exist
-	//some functions that allows to return back to the top of the file
-	//Open the file again
-	fp = fopen(descr_file, "r");
-	if(fp == NULL)
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Something wrong while opening file '%s'.",descr_file);
-
-	for(i=0;i<n;i++)
-	{
-		fscanf(fp, "%c", &c);
-		mesg[i] = c;
+		fclose(fp);
+		return;
 	}
+	fseek(fp, 0, SEEK_END);
+	long fsize = ftell(fp);
+	fseek(fp, 0, SEEK_SET);  //same as rewind(f);
 
-	mesg[i-1] = '\0';
-
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Publishing node configuration.");
-
+	char *mesg = (char *) malloc(fsize + 1);
+	if(fread(mesg, fsize, 1, fp) != 1) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Something wrong while reading file '%s'.",descr_file);
+		free(mesg);
+		fclose(fp);
+		return;
+	}
 	fclose(fp);
+
+	mesg[fsize] = 0;
+
+	/* XXX: who has to free mesg? */
 
 	//publish the domain description
 	DoubleDeckerClient::publish(FROG_DOMAIN_DESCRIPTION, mesg);
