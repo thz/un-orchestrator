@@ -256,6 +256,8 @@ $ make package/[package-name]/compile V=99 (if you want to compile in debug mode
 At first, download the Firmware OpenWrt source code for Netgear R6300 from:
 https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/openwrt-15.05-bcm53xx-netgear-r6300-v2-squashfs.chk
 then install it on the Netgear R6300.
+Link for an image with the UN already compiled and ready for using the native functions:
+https://owncloud.ipv6.polito.it:9090/index.php/s/VhQ5gvAlupeU0Hd
 
 At second, login to OpenWrt: https://wiki.openwrt.org/doc/howto/firstlogin
 
